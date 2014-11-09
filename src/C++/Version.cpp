@@ -6,7 +6,7 @@
 
 #include "Version.hpp"
 
-namespace ConsensusCore
+namespace srsli
 {
     int Version::Major()
     {
