@@ -9,6 +9,7 @@
 #include "Utils.hpp"
 #include "Version.hpp"
 #include "ReferenceSet.cpp"
+#include "SequenceReader.cpp"
 
 using namespace std;
 using namespace boost;
@@ -41,9 +42,15 @@ int main(int argc, char *argv[])
     }
 
     // Read the reference sequences into memory
-    ReferenceSet refSet = ReferenceSet(reference);
+    ReferenceSet RefSet = ReferenceSet(reference);
+    SequenceReader SeqReader = SequenceReader(query);
 
+    std::pair<size_t, SequenceRecord> IdxAndRecord;
 
-    for (unsigned i = 0; i < refSet.Length(); ++i)
-        std::cout << refSet.Ids()[i] << '\t' << refSet.Sequences()[i] << '\n';
+    for ( ; SeqReader.GetNext(IdxAndRecord) ; )
+    {
+        std::cout << "Query " << IdxAndRecord.first << '\n';
+        for (unsigned i = 0; i < RefSet.Length(); ++i)
+            std::cout << "Ref " << RefSet.Ids()[i] << '\t' << RefSet.Sequences()[i] << '\n';
+    }
 }

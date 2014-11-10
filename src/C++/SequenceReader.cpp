@@ -13,27 +13,30 @@ using namespace seqan;
 namespace srsli {
 
     // Open file and create RecordReader.
-    SequenceReader::SequenceReader(const std::string& filename) : _filename( filename )
+    SequenceReader::SequenceReader(const std::string& filename)
+            : Filename( filename )
+            , Stream( Filename.c_str() )
+            , CurrentIdx( 0 )
     {
-        std::fstream in(_filename, std::ios::binary | std::ios::in);
-        seqan::RecordReader<std::fstream, seqan::SinglePass<> > reader(in);
-        auto reader = new seqan::RecordReader<std::fstream, seqan::SinglePass<> >(in);
+        if (!isGood(Stream))
+        {
+            throw std::runtime_error("ERROR: Could not open the file.");
+        }
     }
 
-    //int SequenceReader::next()
-    //{
-        // Read file record-wise.
-        seqan::CharString id;
-        seqan::Dna5String seq;
-        seqan::CharString qual;
+    bool SequenceReader::GetNext(std::pair<size_t, SequenceRecord>& idxAndRecord)
+    {
+        if (atEnd(Stream))
+            return false;
 
-        while (!atEnd(reader))
+        size_t& idx = idxAndRecord.first;
+        SequenceRecord& rec = idxAndRecord.second;
+
+        if (readRecord(rec.Id, rec.Seq, rec.Qual, Stream) == 0)
         {
-            if (readRecord(id, seq, qual, _reader, seqan::Fastq()) != 0)
-                return 1;  // Could not record from file.
-
-            std::cout << id << "\t" << seq << "\n";
+            idx = CurrentIdx++;
+            return true;  // Could not record from file.
         }
-        return 0;
+        return false;
     }
 }
