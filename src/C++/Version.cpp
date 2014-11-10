@@ -1,8 +1,5 @@
 #include <string>
 #include <vector>
-#include <boost/format.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 
 #include "Version.hpp"
 
@@ -31,13 +28,7 @@ namespace srsli
 
     std::string Version::VersionString()
     {
-        using boost::format;
-        using boost::str;
-
-        std::string version = str(format("%d.%d.%d") % API_MAJOR % API_MINOR % API_PATCH);
-#ifndef NDEBUG
-        version += "-DEBUG";
-#endif  // !NDEBUG
+        std::string version = "NOT IMPLEMENTED";
         return version;
     }
 }
