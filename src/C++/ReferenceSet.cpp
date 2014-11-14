@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 
+#include <seqan/index.h>
 #include <seqan/sequence.h>
 #include <seqan/seq_io.h>
 

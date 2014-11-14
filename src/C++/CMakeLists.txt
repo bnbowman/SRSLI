@@ -1,4 +1,6 @@
 add_library (SRSLI_lib
+        ReferenceSet.cpp
+        SequenceReader.cpp
 	Version.cpp
 	)
 

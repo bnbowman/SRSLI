@@ -5,6 +5,8 @@
 #include <seqan/sequence.h>
 #include <seqan/seq_io.h>
 
+#include "SparseAlignment.hpp"
+
 using namespace seqan;
 
 namespace srsli {
@@ -22,6 +24,12 @@ namespace srsli {
         StringSet<Dna5String> Sequences() const;
 
     public:
+        template<typename TConfig = FindSeedsConfig<>>
+        Index<StringSet<Dna5String>, typename TConfig::IndexType> 
+            GetIndex();
+
+    public:
         ReferenceSet(const std::string& filename);
     };
 }
+#include "ReferenceSetImpl.hpp"

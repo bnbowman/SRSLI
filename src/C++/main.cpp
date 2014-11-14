@@ -1,14 +1,17 @@
 // Author: Brett Bowman
 
+#include <map>
 #include <zlib.h>
 #include <stdio.h>
 
 #include <seqan/arg_parse.h>
+#include <seqan/seeds.h>
 
 #include "Utils.hpp"
 #include "Version.hpp"
-#include "ReferenceSet.cpp"
-#include "SequenceReader.cpp"
+#include "ReferenceSet.hpp"
+#include "SequenceReader.hpp"
+#include "SparseAlignment.hpp"
 
 using namespace seqan;
 using namespace srsli;
@@ -48,17 +51,25 @@ int main(int argc, char const ** argv)
 
     // Read the reference sequences into memory
     ReferenceSet RefSet = ReferenceSet(reference);
+    auto RefSetIndex = RefSet.GetIndex<FindSeedsConfig<12>>();
 
     // Create an iterator for the query sequences and a pair for it to return to
     SequenceReader SeqReader = SequenceReader(query);
     std::pair<size_t, SequenceRecord> IdxAndRecord;
+
+    // Define the variable where the initial hits for the query will be stored
+    map<size_t, SeedSet<Simple>> QuerySeedHits;
 
     for ( ; SeqReader.GetNext(IdxAndRecord) ; )
     {
         std::cout << "Query " << IdxAndRecord.first << std::endl;
 
         // For each query sequence, compare it to the ReferenceSet
-        for (unsigned i = 0; i < RefSet.Length(); ++i)
-            std::cout << "Ref " << RefSet.Ids()[i] << '\t' << RefSet.Sequences()[i] << std::endl;
+        //for (unsigned i = 0; i < RefSet.Length(); ++i)
+        //    std::cout << "Ref " << RefSet.Ids()[i] << '\t' << RefSet.Sequences()[i] << std::endl;
+
+        FindSeeds(QuerySeedHits, RefSetIndex, IdxAndRecord.second.Seq);
+        
+        QuerySeedHits.clear();
     }
 }
