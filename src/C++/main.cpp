@@ -55,10 +55,10 @@ int main(int argc, char const ** argv)
 
     for ( ; SeqReader.GetNext(IdxAndRecord) ; )
     {
-        std::cout << "Query " << IdxAndRecord.first << '\n';
+        std::cout << "Query " << IdxAndRecord.first << std::endl;
 
         // For each query sequence, compare it to the ReferenceSet
         for (unsigned i = 0; i < RefSet.Length(); ++i)
-            std::cout << "Ref " << RefSet.Ids()[i] << '\t' << RefSet.Sequences()[i] << '\n';
+            std::cout << "Ref " << RefSet.Ids()[i] << '\t' << RefSet.Sequences()[i] << std::endl;
     }
 }
