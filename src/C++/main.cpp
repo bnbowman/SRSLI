@@ -51,27 +51,26 @@ int main(int argc, char const ** argv)
     getArgumentValue(reference, parser, 1);
 
     // Read the reference sequences into memory
-    ReferenceSet RefSet = ReferenceSet(reference);
-    auto RefSetIndex = RefSet.GetIndex<FindSeedsConfig<12>>();
+    ReferenceSet refSet = ReferenceSet(reference);
+    auto refSetIndex = refSet.GetIndex<FindSeedsConfig<12>>();
 
     // Create an iterator for the query sequences and a pair for it to return to
-    SequenceReader SeqReader = SequenceReader(query);
-    std::pair<size_t, SequenceRecord> IdxAndRecord;
+    SequenceReader seqReader = SequenceReader(query);
+        std::pair<size_t, SequenceRecord> idxAndRecord;
 
     // Define the variable where the initial hits for the query will be stored
-    map<size_t, SeedSet<Simple>> QuerySeedHits;
+    map<size_t, SeedSet<Simple>> querySeedHits;
 
-    for ( ; SeqReader.GetNext(IdxAndRecord) ; )
+    for ( ; seqReader.GetNext(idxAndRecord) ; )
     {
-        std::cout << "Query " << IdxAndRecord.first << std::endl;
+        std::cout << "Query " << idxAndRecord.first << std::endl;
 
         // For each query sequence, compare it to the ReferenceSet
-        //for (unsigned i = 0; i < RefSet.Length(); ++i)
-        //    std::cout << "Ref " << RefSet.Ids()[i] << '\t' << RefSet.Sequences()[i] << std::endl;
+        //for (unsigned i = 0; i < refSet.Length(); ++i)
+        //    std::cout << "Ref " << refSet.Ids()[i] << '\t' << refSet.Sequences()[i] << std::endl;
 
-        FindSeeds(QuerySeedHits, RefSetIndex, IdxAndRecord.second.Seq);
+        FindSeeds(querySeedHits, refSetIndex, idxAndRecord.second.Seq);
 
-        
-        QuerySeedHits.clear();
+        querySeedHits.clear();
     }
 }
