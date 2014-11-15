@@ -9,6 +9,7 @@
 
 #include "Utils.hpp"
 #include "Version.hpp"
+#include "SeqAnConfig.hpp"
 #include "ReferenceSet.hpp"
 #include "SequenceReader.hpp"
 #include "SparseAlignment.hpp"
@@ -69,6 +70,7 @@ int main(int argc, char const ** argv)
         //    std::cout << "Ref " << RefSet.Ids()[i] << '\t' << RefSet.Sequences()[i] << std::endl;
 
         FindSeeds(QuerySeedHits, RefSetIndex, IdxAndRecord.second.Seq);
+
         
         QuerySeedHits.clear();
     }
