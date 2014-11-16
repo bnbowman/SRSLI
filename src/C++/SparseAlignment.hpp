@@ -118,7 +118,6 @@ void FindSeeds(map<size_t, SeedSet<Simple>>& seeds,
     sort(indexHits.begin(), indexHits.end(), VectorSizeCompare<Position>);
 
     size_t maxHits = static_cast<size_t>(mask * indexHits.size());
-    //std::cout << "Sorting complete, using " << maxHits << " positions" << std::endl;
 
     // cutoff the top (1-mask) hits by index (not top (1-mask) kmers)
     for (size_t i = 0; i < maxHits; i++)
@@ -128,8 +127,6 @@ void FindSeeds(map<size_t, SeedSet<Simple>>& seeds,
             size_t idx = getValueI1(pos);
 
             Seed<Simple> seed(i, getValueI2(pos), TConfig::Size);
-
-            //std::cout << "Adding seed " << seed << " for reference " << idx << std::endl;
 
             if (!addSeed(seeds[idx], seed, 0, Merge()))
             {
@@ -146,8 +143,22 @@ Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1, const Dna5
                                               const Score<short, Simple>& scoring)
 {
     String<Seed<Simple>> chain;
+    std::cout << "Seeds: " << length(seeds[0]) << std::endl;
     chainSeedsGlobally(chain, seeds[0], SparseChaining());
     std::cout << "Finishing chaining seeds" << std::endl;
+    std::cout << "Chain: " << length(chain) << std::endl;
+
+    for (auto it = begin(chain, seqan::Standard()); it != end(chain, seqan::Standard()); ++it)
+    {
+        int i = beginPositionH(*it);
+        int j = endPositionH(*it);
+        std::cout << *it << " " << "Length: " << j-i << "\n";
+    }
+
+    Seed<Simple> first = chain[0];
+    std::cout << "First: " << first << std::endl;
+    Seed<Simple> last = chain[ length(chain)-1 ];
+    std::cout << "Last: " << last << std::endl;
 
     Align<Dna5String, ArrayGaps> alignment;
     resize(rows(alignment), 2);

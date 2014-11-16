@@ -35,6 +35,11 @@ int main(int argc, char const ** argv)
     addArgument(parser, ArgParseArgument(
                 ArgParseArgument::STRING, "REFERENCE"));
 
+    addOption(parser, ArgParseOption(
+                "s", "seedSize", "Size to use when searching for alignment seeds.",
+                ArgParseArgument::INTEGER, "INT"));
+    setDefaultValue(parser, "seedSize", "12");
+
     // Parse command line.
     seqan::ArgumentParser::ParseResult res = parse(parser, argc, argv);
 
@@ -46,11 +51,13 @@ int main(int argc, char const ** argv)
     // Extract the arguments from the Parser
     std::string query;
     std::string reference;
+    int seedSize;
 
     getArgumentValue(query, parser, 0);
     getArgumentValue(reference, parser, 1);
+    getOptionValue(seedSize, parser, "seedSize");
 
-    // Create a 
+    // Use the options to set the configs and scoring schemes
     Score<short, Simple> scoringScheme(4, -13, -7);
 
     // Read the reference sequences into memory
@@ -66,7 +73,7 @@ int main(int argc, char const ** argv)
 
     for ( ; seqReader.GetNext(idxAndRecord) ; )
     {
-        std::cout << "Query " << idxAndRecord.first << std::endl;
+        std::cout << "Query #" << idxAndRecord.first+1 << " - "<< idxAndRecord.second.Id << std::endl;
 
         // For each query sequence, compare it to the ReferenceSet
         //for (unsigned i = 0; i < refSet.Length(); ++i)
