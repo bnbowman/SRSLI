@@ -50,6 +50,9 @@ int main(int argc, char const ** argv)
     getArgumentValue(query, parser, 0);
     getArgumentValue(reference, parser, 1);
 
+    // Create a 
+    Score<short, Simple> scoringScheme(4, -13, -7);
+
     // Read the reference sequences into memory
     ReferenceSet refSet = ReferenceSet(reference);
     auto refSetIndex = refSet.GetIndex<FindSeedsConfig<12>>();
@@ -69,7 +72,15 @@ int main(int argc, char const ** argv)
         //for (unsigned i = 0; i < refSet.Length(); ++i)
         //    std::cout << "Ref " << refSet.Ids()[i] << '\t' << refSet.Sequences()[i] << std::endl;
 
+        // Find the Kmer matches for the current query sequence
         FindSeeds(querySeedHits, refSetIndex, idxAndRecord.second.Seq);
+        std::cout << "Finished finding seeds" << std::endl;
+
+        // Chain the initial Kmer hits into an alignment
+        auto align = SeedsToAlignment(idxAndRecord.second.Seq, 
+                                      refSet.Sequences()[0],
+                                      querySeedHits,
+                                      scoringScheme);
 
         querySeedHits.clear();
     }

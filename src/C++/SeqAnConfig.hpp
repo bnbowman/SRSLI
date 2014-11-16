@@ -16,12 +16,12 @@ using namespace seqan;
 template <size_t TSize = 12, typename TShape = UngappedShape<TSize>, typename TIndex = IndexQGram<TShape>>
 class FindSeedsConfig
 {
-public:
-    typedef TIndex IndexType;
-    static const int Size = TSize;
+    public:
+        typedef TIndex IndexType;
+        static const int Size = TSize;
 };
 
 const FindSeedsConfig<> DefaultFindSeedsConfig();
 
-//
-typedef AlignConfig<false, false, false, false> TGlobalAlignConfig;
+// Alignment configurations
+typedef AlignConfig<false, false, false, false> GlobalAlignConfig();

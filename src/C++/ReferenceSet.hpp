@@ -14,14 +14,17 @@ namespace srsli {
     class ReferenceSet {
 
     private:
-        std::string Filename;
-        StringSet<CharString> Ids_;
-        StringSet<Dna5String> Seqs;
+        std::string filename;
+        std::string faiFilename;
+        StringSet<CharString> ids;
+        StringSet<Dna5String> seqs;
+        FaiIndex faiIndex;
 
     public:
         int Length() const;
         StringSet<CharString> Ids() const;
         StringSet<Dna5String> Sequences() const;
+        seqan::FaiIndex FaiIndex() const;
 
     public:
         template<typename TConfig = FindSeedsConfig<>>
@@ -29,7 +32,7 @@ namespace srsli {
             GetIndex();
 
     public:
-        ReferenceSet(const std::string& filename);
+        ReferenceSet(const std::string& filename_);
     };
 }
 #include "ReferenceSetImpl.hpp"

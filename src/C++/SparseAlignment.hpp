@@ -139,21 +139,25 @@ void FindSeeds(map<size_t, SeedSet<Simple>>& seeds,
     }
 }
 
-template<typename TAlignConfig>
+//TODO: Why isn't the global align config working?
+template<typename TAlignConfig = GlobalAlignConfig>
 Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1, const Dna5String& seq2,
-                                              const SeedSet<Simple>& seeds,
-                                              const Score<int, Simple>& scoring,
-                                              const TAlignConfig& config)
+                                              map<size_t, SeedSet<Simple>>& seeds,
+                                              const Score<short, Simple>& scoring)
 {
     String<Seed<Simple>> chain;
-    chainSeedsGlobally(chain, seeds, SparseChaining());
+    chainSeedsGlobally(chain, seeds[0], SparseChaining());
+    std::cout << "Finishing chaining seeds" << std::endl;
 
     Align<Dna5String, ArrayGaps> alignment;
     resize(rows(alignment), 2);
     assignSource(row(alignment, 0), seq1);
     assignSource(row(alignment, 1), seq2);
+    AlignConfig<true, true, true, true> globalConfig;
 
-    bandedChainAlignment(alignment, chain, scoring, config);
+    std::cout << "Starting alignment of sequences" << std::endl;
+    bandedChainAlignment(alignment, chain, scoring, globalConfig, 2);
+    std::cout << "Finishing alignment of sequences" << std::endl;
 
     return alignment;
 }
