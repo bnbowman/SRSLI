@@ -58,7 +58,9 @@ int main(int argc, char const ** argv)
     getOptionValue(seedSize, parser, "seedSize");
 
     // Use the options to set the configs and scoring schemes
-    Score<short, Simple> scoringScheme(4, -13, -7);
+    Score<long, Simple> scoringScheme(4, -13, -7);
+    //Score<unsigned short, Simple> scoringScheme(4, -13, -7);
+    //Score<unsigned short, Simple> scoringScheme(2, -2, -1);
 
     // Read the reference sequences into memory
     ReferenceSet refSet = ReferenceSet(reference);
@@ -66,10 +68,11 @@ int main(int argc, char const ** argv)
 
     // Create an iterator for the query sequences and a pair for it to return to
     SequenceReader seqReader = SequenceReader(query);
-        std::pair<size_t, SequenceRecord> idxAndRecord;
+    std::pair<size_t, SequenceRecord> idxAndRecord;
 
     // Define the variable where the initial hits for the query will be stored
-    map<size_t, SeedSet<Simple>> querySeedHits;
+    //map<size_t, SeedSet<Simple>> querySeedHits;
+    SeedSet<Simple> querySeedHits;
 
     for ( ; seqReader.GetNext(idxAndRecord) ; )
     {
@@ -80,7 +83,7 @@ int main(int argc, char const ** argv)
         //    std::cout << "Ref " << refSet.Ids()[i] << '\t' << refSet.Sequences()[i] << std::endl;
 
         // Find the Kmer matches for the current query sequence
-        FindSeeds(querySeedHits, refSetIndex, idxAndRecord.second.Seq);
+        FindSeeds2(querySeedHits, refSetIndex, idxAndRecord.second.Seq);
         std::cout << "Finished finding seeds" << std::endl;
 
         // Chain the initial Kmer hits into an alignment
@@ -89,6 +92,6 @@ int main(int argc, char const ** argv)
                                       querySeedHits,
                                       scoringScheme);
 
-        querySeedHits.clear();
+        //querySeedHits.clear();
     }
 }

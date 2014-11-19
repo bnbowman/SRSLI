@@ -4,6 +4,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <typeinfo>
 
 #include <seqan/align.h>
 #include <seqan/basic.h>
@@ -78,6 +79,38 @@ bool VectorSizeCompare(vector<T> a, vector<T> b)
 
 
 template<typename TConfig = FindSeedsConfig<>>
+void FindSeeds2(SeedSet<Simple>& seeds,
+                Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
+                const Dna5String& seq)
+{
+    typedef Shape<Dna5, typename TConfig::ShapeType> TShape;
+    typedef StringSet<Dna5String> TStringSet;
+    typedef Index<TStringSet, typename TConfig::IndexType> TIndex;
+    typedef Finder<TIndex> TFinder;
+    typedef Infix<const Dna5String> TInfix;
+    typedef Iterator<const Dna5String, Standard>::Type TIterator;
+
+    indexRequire(index, QGramSADir());  // On-demand index creation.
+    TFinder qgramFinder(index);
+    for (TIterator it = begin(seq, Standard()); it != end(seq, Standard()) - 12; ++it)
+    {
+        int seqPos = position(it, seq);
+        while(find(qgramFinder, infix(seq, it, it+12)))
+        {
+            int refPos = getValueI2( position(qgramFinder) );
+            Seed<Simple> seed(seqPos, refPos, TConfig::Size);
+            if (!addSeed(seeds, seed, 0, Merge()))
+            {
+                addSeed(seeds, seed, Single());
+            }
+        }
+
+        // Clear finder for next search.
+        clear(qgramFinder); 
+    }
+}
+
+template<typename TConfig = FindSeedsConfig<>>
 void FindSeeds(map<size_t, SeedSet<Simple>>& seeds,
                Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
                const Dna5String& seq,
@@ -94,6 +127,7 @@ void FindSeeds(map<size_t, SeedSet<Simple>>& seeds,
     size_t end = SafeSubtract(length(seq), TConfig::Size);
 
     indexHits.resize(end);
+
 
     // accumulate all the found indexHits by their index in seq
     for (size_t i = 0; i < end; i++)
@@ -136,15 +170,22 @@ void FindSeeds(map<size_t, SeedSet<Simple>>& seeds,
     }
 }
 
+typedef Seed<Simple> TSeed;
+
 //TODO: Why isn't the global align config working?
 template<typename TAlignConfig = GlobalAlignConfig>
-Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1, const Dna5String& seq2,
-                                              map<size_t, SeedSet<Simple>>& seeds,
-                                              const Score<short, Simple>& scoring)
+Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1, 
+                                              const Dna5String& seq2,
+                                              SeedSet<Simple>& seeds,
+                                              const Score<long, Simple>& scoring)
 {
+    //SeedSet<Simple> seeds2;
+    //addSeed(seeds2, TSeed(  12,   12, 100), seqan::Single());
+    //addSeed(seeds2, TSeed( 120,  120, 100), seqan::Single());
+    
     String<Seed<Simple>> chain;
-    std::cout << "Seeds: " << length(seeds[0]) << std::endl;
-    chainSeedsGlobally(chain, seeds[0], SparseChaining());
+    std::cout << "Seeds: " << length(seeds) << std::endl;
+    chainSeedsGlobally(chain, seeds, SparseChaining());
     std::cout << "Finishing chaining seeds" << std::endl;
     std::cout << "Chain: " << length(chain) << std::endl;
 
@@ -164,11 +205,14 @@ Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1, const Dna5
     resize(rows(alignment), 2);
     assignSource(row(alignment, 0), seq1);
     assignSource(row(alignment, 1), seq2);
-    AlignConfig<true, true, true, true> globalConfig;
+    AlignConfig<false, false, false, false> globalConfig;
 
     std::cout << "Starting alignment of sequences" << std::endl;
-    bandedChainAlignment(alignment, chain, scoring, globalConfig, 2);
+    auto alnScore = bandedChainAlignment(alignment, chain, scoring, globalConfig);
     std::cout << "Finishing alignment of sequences" << std::endl;
+
+    std::cout << alignment << std::endl;
+    std::cout << "Score: " << alnScore << std::endl;
 
     return alignment;
 }

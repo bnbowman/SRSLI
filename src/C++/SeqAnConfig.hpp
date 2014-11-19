@@ -17,6 +17,7 @@ template <size_t TSize = 12, typename TShape = UngappedShape<TSize>, typename TI
 class FindSeedsConfig
 {
     public:
+        typedef TShape ShapeType;
         typedef TIndex IndexType;
         static const int Size = TSize;
 };
