@@ -13,6 +13,7 @@ using namespace seqan;
 // Config for finding alignment seeds with suffix arrays / QGrams 
 //
 // TODO (lhepler) : investigate default values other than 10
+//template <size_t TSize = 12, typename TShape = UngappedShape<TSize>, typename TIndex = FMIndex<>>
 template <size_t TSize = 12, typename TShape = UngappedShape<TSize>, typename TIndex = IndexQGram<TShape>>
 class FindSeedsConfig
 {
@@ -25,4 +26,4 @@ class FindSeedsConfig
 const FindSeedsConfig<> DefaultFindSeedsConfig();
 
 // Alignment configurations
-typedef AlignConfig<false, false, false, false> GlobalAlignConfig();
+typedef AlignConfig<false, true, true, false> GlobalAlignConfig();

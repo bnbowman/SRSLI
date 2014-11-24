@@ -2,6 +2,7 @@
 #pragma once
 
 #include <iostream>
+#include <stdbool.h>
 #include <map>
 #include <vector>
 #include <typeinfo>
@@ -79,38 +80,6 @@ bool VectorSizeCompare(vector<T> a, vector<T> b)
 
 
 template<typename TConfig = FindSeedsConfig<>>
-void FindSeeds2(SeedSet<Simple>& seeds,
-                Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
-                const Dna5String& seq)
-{
-    typedef Shape<Dna5, typename TConfig::ShapeType> TShape;
-    typedef StringSet<Dna5String> TStringSet;
-    typedef Index<TStringSet, typename TConfig::IndexType> TIndex;
-    typedef Finder<TIndex> TFinder;
-    typedef Infix<const Dna5String> TInfix;
-    typedef Iterator<const Dna5String, Standard>::Type TIterator;
-
-    indexRequire(index, QGramSADir());  // On-demand index creation.
-    TFinder qgramFinder(index);
-    for (TIterator it = begin(seq, Standard()); it != end(seq, Standard()) - 12; ++it)
-    {
-        int seqPos = position(it, seq);
-        while(find(qgramFinder, infix(seq, it, it+12)))
-        {
-            int refPos = getValueI2( position(qgramFinder) );
-            Seed<Simple> seed(seqPos, refPos, TConfig::Size);
-            if (!addSeed(seeds, seed, 0, Merge()))
-            {
-                addSeed(seeds, seed, Single());
-            }
-        }
-
-        // Clear finder for next search.
-        clear(qgramFinder); 
-    }
-}
-
-template<typename TConfig = FindSeedsConfig<>>
 void FindSeeds(map<size_t, SeedSet<Simple>>& seeds,
                Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
                const Dna5String& seq,
@@ -170,7 +139,154 @@ void FindSeeds(map<size_t, SeedSet<Simple>>& seeds,
     }
 }
 
+// Find seeds using a qgramFinder
+template<typename TConfig = FindSeedsConfig<>>
+void FindSeeds2(SeedSet<Simple>& seeds,
+                Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
+                const Dna5String& query)
+{
+    typedef Shape<Dna5, typename TConfig::ShapeType> TShape;
+    typedef StringSet<Dna5String> TStringSet;
+    typedef Index<TStringSet, typename TConfig::IndexType> TIndex;
+    typedef Finder<TIndex> TFinder;
+    typedef Infix<const Dna5String> TInfix;
+    typedef Iterator<const Dna5String, Standard>::Type TIterator;
+
+    TFinder qgramFinder(index);
+    for (TIterator it = begin(query, Standard()); it != end(query, Standard()) - 12; ++it)
+    {
+        int qPos = position(it, query);
+        Dna5String qgram = infix(query, it, it+12);
+                
+        while(find(qgramFinder, qgram))
+        {
+            // Find the reference position, 
+            int refPos = getValueI2( position(qgramFinder) );
+            Seed<Simple> seed(qPos, refPos, TConfig::Size);
+            
+            if (!addSeed(seeds, seed, 0, Merge()))
+            {
+                addSeed(seeds, seed, Single());
+            }
+        }
+
+        // Clear finder for next search.
+        clear(qgramFinder); 
+    }
+}
+
+
+// Find seeds using the index
+template<typename TConfig = FindSeedsConfig<>>
+void FindSeeds3(SeedSet<Simple>& seeds,
+                Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
+                const Dna5String& query)
+{
+    typedef Shape<Dna5, typename TConfig::ShapeType> TShape;
+    typedef StringSet<Dna5String> TStringSet;
+    typedef Index<TStringSet, typename TConfig::IndexType> TIndex;
+    typedef Finder<TIndex> TFinder;
+    typedef Infix<const Dna5String> TInfix;
+    typedef Iterator<const Dna5String, Standard>::Type TIterator;
+
+    TShape& shape = indexShape(index);
+    hashInit(shape, begin(query, Standard()));
+    for (TIterator it = begin(query, Standard()); it != end(query, Standard()) - 12; ++it)
+    {
+        // Hash the current Qgram, then get it's query position and number of hits
+        hashNext(shape, it);
+        size_t qPos  = position(it, query);
+        size_t count = countOccurrences(index, shape);
+                
+        for (size_t i = 0; i < count; ++i)
+        {
+            // Find the reference position, 
+            int refPos = getValueI2( getOccurrences(index, shape)[i] );
+            Seed<Simple> seed(qPos, refPos, TConfig::Size);
+            
+            if (!addSeed(seeds, seed, 0, Merge()))
+            {
+                addSeed(seeds, seed, Single());
+            }
+        }
+    }
+}
+
 typedef Seed<Simple> TSeed;
+typedef String<TSeed> TSeedString;
+
+template<typename TConfig = FindSeedsConfig<>>
+TSeedString trimSeedChain(const TSeedString& chain,
+                          unsigned short maxDiagDiff)
+{
+    TSeedString bestChain;
+    TSeedString currentChain;
+    bool prevDiagSet = false;
+    int prevDiag;
+    int currDiag;
+    int diagDiff;
+
+    for (auto it = begin(chain, seqan::Standard()); it != end(chain, seqan::Standard())-1; ++it)
+    {
+        currDiag = lowerDiagonal(*it);
+
+        // If there is a previous diagonal, check the difference from current;
+        if (prevDiagSet) 
+        {
+            diagDiff = std::abs(currDiag - prevDiag);
+            std::cout << *it << " " << "Diag: " << diagDiff << "\n";
+
+            // If we have a particularly large gap, stop adding to the current chain...
+            if (diagDiff > maxDiagDiff) 
+            { 
+                bestChain = (length(currentChain) > length(bestChain)) ? currentChain : bestChain;
+                clear(currentChain);
+            // Otherwise append it to the current chain
+            } else {
+                append(currentChain, *it);
+            }
+
+        // If there was no previous diagonal, we just save the current seed
+        } else {
+            append(currentChain, *it);
+            prevDiagSet = true;
+        }
+        // Whatever the location of the current/previous seeds, keep the current diagnoal
+        prevDiag = currDiag;
+    }
+
+    return bestChain;
+}
+
+
+template<typename TAlignConfig = GlobalAlignConfig>
+Segment<const Dna5String> SeedChainToInfix(const Dna5String& seq,
+                                           const String<Seed<Simple>>& chain,
+                                           char axis)
+{
+    int startPos, endPos;
+    if (axis == 'H')
+    {
+       startPos = beginPositionH(front(chain));
+       endPos   = endPositionH(back(chain));
+    } else {
+       startPos = beginPositionV(front(chain));
+       endPos   = endPositionV(back(chain));
+    }
+    std::cout << "S: " << startPos << "E: " << endPos << std::endl;
+    return infix(seq, 0, endPos);
+}
+
+
+//Stuff
+//template<typename TConfig = GlobalAlignConfig>
+//String<Seed<Simple>> ScoreSeedChain(String<Seed<Simple>>& chain,
+//                                    const Dna5String& reference,
+//                                    const Index<StringSet<Dna5String>, typename TConfig::IndexType>& index)
+//{
+//    
+//}
+
 
 //TODO: Why isn't the global align config working?
 template<typename TAlignConfig = GlobalAlignConfig>
@@ -196,15 +312,24 @@ Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1,
         std::cout << *it << " " << "Length: " << j-i << "\n";
     }
 
-    Seed<Simple> first = chain[0];
-    std::cout << "First: " << first << std::endl;
-    Seed<Simple> last = chain[ length(chain)-1 ];
-    std::cout << "Last: " << last << std::endl;
+    std::cout << "Initial Chain" << std::endl;
+    std::cout << "First: " << front(chain) << std::endl;
+    std::cout << "Last: " << back(chain) << std::endl;
+
+    String<Seed<Simple>> trimmedChain;
+    trimmedChain = trimSeedChain(chain, 30);
+
+    std::cout << "Trimmed Chain" << std::endl;
+    std::cout << "First: " << front(trimmedChain) << std::endl;
+    std::cout << "Last: " << back(trimmedChain) << std::endl;
+
+    auto infix1 = SeedChainToInfix(seq1, trimmedChain, 'H');
+    auto infix2 = SeedChainToInfix(seq2, trimmedChain, 'V');
 
     Align<Dna5String, ArrayGaps> alignment;
     resize(rows(alignment), 2);
-    assignSource(row(alignment, 0), seq1);
-    assignSource(row(alignment, 1), seq2);
+    assignSource(row(alignment, 0), infix1);
+    assignSource(row(alignment, 1), infix2);
     AlignConfig<false, false, false, false> globalConfig;
 
     std::cout << "Starting alignment of sequences" << std::endl;
@@ -213,6 +338,22 @@ Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1,
 
     std::cout << alignment << std::endl;
     std::cout << "Score: " << alnScore << std::endl;
+    //std::cout << "Rows: "  << length(rows(alignment)) << std::endl;
+    //std::cout << "Row: "   << length(row(alignment, 0)) << std::endl;
+    //std::cout << "Cols: "  << length(cols(alignment)) << std::endl;
+    //std::cout << "Col: "   << value(cols(alignment), 0) << std::endl;
+    //std::cout << "Cols: "  << typeid(rows(alignment)).name()  << std::endl;
+    //std::cout << "Cols: "  << typeid(row(alignment,0)).name() << std::endl;
+    //std::cout << "Col: "   << typeid(cols(alignment)).name()  << std::endl;
+
+    //auto alnCols = cols(alignment);
+    //auto alnRows = rows(alignment);
+    //std::cout << "B1: "  << begin(alnRows[0])  << std::endl;
+    //std::cout << "B1: "   << clippedBeginPosition(alnRows[0]) << std::endl;
+    //std::cout << "B2: "   << clippedBeginPosition(alnRows[1]) << std::endl;
+    //std::cout << "E1: "  << end(alnRows[0]) << std::endl;
+    //std::cout << "E1: "  << clippedEndPosition(alnRows[0]) << std::endl;
+    //std::cout << "E2: "  << clippedEndPosition(alnRows[1]) << std::endl;
 
     return alignment;
 }

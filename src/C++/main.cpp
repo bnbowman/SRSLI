@@ -6,6 +6,7 @@
 
 #include <seqan/arg_parse.h>
 #include <seqan/seeds.h>
+#include <seqan/index.h>
 
 #include "Utils.hpp"
 #include "Version.hpp"
@@ -59,12 +60,37 @@ int main(int argc, char const ** argv)
 
     // Use the options to set the configs and scoring schemes
     Score<long, Simple> scoringScheme(4, -13, -7);
-    //Score<unsigned short, Simple> scoringScheme(4, -13, -7);
-    //Score<unsigned short, Simple> scoringScheme(2, -2, -1);
+
+    typedef FindSeedsConfig<12> TConfig;
 
     // Read the reference sequences into memory
     ReferenceSet refSet = ReferenceSet(reference);
-    auto refSetIndex = refSet.GetIndex<FindSeedsConfig<12>>();
+    auto refSetIndex = refSet.GetIndex<TConfig>();
+    indexRequire(refSetIndex, QGramSADir());  // On-demand index creation.
+   
+    //typedef StringSet<Dna5String> TStringSet;
+    //typedef Index<TStringSet, TConfig::IndexType> TIndex;
+    //typedef Iterator<TIndex, TopDown<ParentLinks<>>> TIter;
+
+    //TIter::Type it(refSetIndex);
+    //do {
+    //    // Print theletters from the root to the current node
+    //    std::cout << representative(it) << std::endl;
+
+    //    if (!goDown(it) && !goRight(it))
+    //        while (goUp(it) && !goRight(it));
+    //} while (!isRoot(it));
+
+    //TShape & shape = indexShape(index);
+    //hashInit(shape, begin(query, Standard()));
+    //for (TIterator it = begin(query, Standard()); it != end(query, Standard()) - 12; ++it)
+    //{
+    //    std::cout << "Occ at: ";
+    //    hashNext(shape, it);
+    //    for (unsigned i = 0; i < length(getOccurrences(index, shape)); ++i)
+    //        std::cout << getOccurrences(index, shape)[i] << " ";
+    //    std::cout << std::endl;
+    //}
 
     // Create an iterator for the query sequences and a pair for it to return to
     SequenceReader seqReader = SequenceReader(query);
@@ -83,7 +109,7 @@ int main(int argc, char const ** argv)
         //    std::cout << "Ref " << refSet.Ids()[i] << '\t' << refSet.Sequences()[i] << std::endl;
 
         // Find the Kmer matches for the current query sequence
-        FindSeeds2(querySeedHits, refSetIndex, idxAndRecord.second.Seq);
+        FindSeeds3(querySeedHits, refSetIndex, idxAndRecord.second.Seq);
         std::cout << "Finished finding seeds" << std::endl;
 
         // Chain the initial Kmer hits into an alignment
