@@ -14,6 +14,7 @@ namespace srsli {
     class ReferenceSet {
 
     private:
+        size_t size;
         std::string filename;
         std::string faiFilename;
         StringSet<CharString> ids;
@@ -21,7 +22,8 @@ namespace srsli {
         FaiIndex faiIndex;
 
     public:
-        int Length() const;
+        size_t Size() const;
+        size_t Length() const;
         StringSet<CharString> Ids() const;
         StringSet<Dna5String> Sequences() const;
         seqan::FaiIndex FaiIndex() const;

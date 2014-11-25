@@ -68,37 +68,13 @@ int main(int argc, char const ** argv)
     auto refSetIndex = refSet.GetIndex<TConfig>();
     indexRequire(refSetIndex, QGramSADir());  // On-demand index creation.
    
-    //typedef StringSet<Dna5String> TStringSet;
-    //typedef Index<TStringSet, TConfig::IndexType> TIndex;
-    //typedef Iterator<TIndex, TopDown<ParentLinks<>>> TIter;
-
-    //TIter::Type it(refSetIndex);
-    //do {
-    //    // Print theletters from the root to the current node
-    //    std::cout << representative(it) << std::endl;
-
-    //    if (!goDown(it) && !goRight(it))
-    //        while (goUp(it) && !goRight(it));
-    //} while (!isRoot(it));
-
-    //TShape & shape = indexShape(index);
-    //hashInit(shape, begin(query, Standard()));
-    //for (TIterator it = begin(query, Standard()); it != end(query, Standard()) - 12; ++it)
-    //{
-    //    std::cout << "Occ at: ";
-    //    hashNext(shape, it);
-    //    for (unsigned i = 0; i < length(getOccurrences(index, shape)); ++i)
-    //        std::cout << getOccurrences(index, shape)[i] << " ";
-    //    std::cout << std::endl;
-    //}
-
     // Create an iterator for the query sequences and a pair for it to return to
     SequenceReader seqReader = SequenceReader(query);
     std::pair<size_t, SequenceRecord> idxAndRecord;
 
     // Define the variable where the initial hits for the query will be stored
     //map<size_t, SeedSet<Simple>> querySeedHits;
-    SeedSet<Simple> querySeedHits;
+    TSeedSet querySeedHits;
 
     for ( ; seqReader.GetNext(idxAndRecord) ; )
     {
@@ -109,7 +85,7 @@ int main(int argc, char const ** argv)
         //    std::cout << "Ref " << refSet.Ids()[i] << '\t' << refSet.Sequences()[i] << std::endl;
 
         // Find the Kmer matches for the current query sequence
-        FindSeeds3(querySeedHits, refSetIndex, idxAndRecord.second.Seq);
+        FindSeeds3(querySeedHits, refSetIndex, refSet.Size(), idxAndRecord.second.Seq);
         std::cout << "Finished finding seeds" << std::endl;
 
         // Chain the initial Kmer hits into an alignment

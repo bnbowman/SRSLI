@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <stdbool.h>
+#include <math.h>
 #include <map>
 #include <vector>
 #include <typeinfo>
@@ -178,8 +179,9 @@ void FindSeeds2(SeedSet<Simple>& seeds,
 
 // Find seeds using the index
 template<typename TConfig = FindSeedsConfig<>>
-void FindSeeds3(SeedSet<Simple>& seeds,
+void FindSeeds3(TSeedSet& seeds,
                 Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
+                const size_t& refSize,
                 const Dna5String& query)
 {
     typedef Shape<Dna5, typename TConfig::ShapeType> TShape;
@@ -196,13 +198,24 @@ void FindSeeds3(SeedSet<Simple>& seeds,
         // Hash the current Qgram, then get it's query position and number of hits
         hashNext(shape, it);
         size_t qPos  = position(it, query);
-        size_t count = countOccurrences(index, shape);
-                
+        auto hits    = getOccurrences(index, shape);
+        size_t count = length(hits);
+
+        // Skip this iteration if the Kmer doesn't exist in the reference
+        if (count == 0)
+            continue;
+
+        // Compute the score for the seed based on it's frequency in the reference
+        float frequency = float(count)/float(refSize);
+        float score = log( 1.0/frequency );
+
         for (size_t i = 0; i < count; ++i)
         {
             // Find the reference position, 
-            int refPos = getValueI2( getOccurrences(index, shape)[i] );
-            Seed<Simple> seed(qPos, refPos, TConfig::Size);
+            int refPos = getValueI2( hits[i] );
+            TSeed seed = TSeed(qPos, refPos, TConfig::Size);
+            setScore(seed, score);
+            //std::cout << seed << " " << seqan::score(seed) << " " << score << std::endl;
             
             if (!addSeed(seeds, seed, 0, Merge()))
             {
@@ -212,11 +225,9 @@ void FindSeeds3(SeedSet<Simple>& seeds,
     }
 }
 
-typedef Seed<Simple> TSeed;
-typedef String<TSeed> TSeedString;
 
 template<typename TConfig = FindSeedsConfig<>>
-TSeedString trimSeedChain(const TSeedString& chain,
+TSeedString TrimSeedChain(const TSeedString& chain,
                           unsigned short maxDiagDiff)
 {
     TSeedString bestChain;
@@ -226,7 +237,7 @@ TSeedString trimSeedChain(const TSeedString& chain,
     int currDiag;
     int diagDiff;
 
-    for (auto it = begin(chain, seqan::Standard()); it != end(chain, seqan::Standard())-1; ++it)
+    for (auto it = begin(chain, seqan::Standard()); it != end(chain, seqan::Standard()); ++it)
     {
         currDiag = lowerDiagonal(*it);
 
@@ -234,7 +245,6 @@ TSeedString trimSeedChain(const TSeedString& chain,
         if (prevDiagSet) 
         {
             diagDiff = std::abs(currDiag - prevDiag);
-            std::cout << *it << " " << "Diag: " << diagDiff << "\n";
 
             // If we have a particularly large gap, stop adding to the current chain...
             if (diagDiff > maxDiagDiff) 
@@ -255,6 +265,8 @@ TSeedString trimSeedChain(const TSeedString& chain,
         prevDiag = currDiag;
     }
 
+    if (length(bestChain) == 0)
+        return currentChain;
     return bestChain;
 }
 
@@ -279,13 +291,15 @@ Segment<const Dna5String> SeedChainToInfix(const Dna5String& seq,
 
 
 //Stuff
-//template<typename TConfig = GlobalAlignConfig>
-//String<Seed<Simple>> ScoreSeedChain(String<Seed<Simple>>& chain,
-//                                    const Dna5String& reference,
-//                                    const Index<StringSet<Dna5String>, typename TConfig::IndexType>& index)
-//{
-//    
-//}
+template<typename TConfig = GlobalAlignConfig>
+float ScoreSeedChain(const TSeedString& chain)
+{
+    float score = 0.0;
+    for (unsigned i = 0; i < length(chain); ++i)
+        score += seqan::score(chain[i]);
+
+    return score;
+}
 
 
 //TODO: Why isn't the global align config working?
@@ -315,13 +329,15 @@ Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1,
     std::cout << "Initial Chain" << std::endl;
     std::cout << "First: " << front(chain) << std::endl;
     std::cout << "Last: " << back(chain) << std::endl;
+    std::cout << "Score: " << ScoreSeedChain(chain) << std::endl;
 
-    String<Seed<Simple>> trimmedChain;
-    trimmedChain = trimSeedChain(chain, 30);
+    TSeedString trimmedChain = TrimSeedChain(chain, 30);
 
     std::cout << "Trimmed Chain" << std::endl;
+    std::cout << "Length: " << length(trimmedChain) << std::endl;
     std::cout << "First: " << front(trimmedChain) << std::endl;
     std::cout << "Last: " << back(trimmedChain) << std::endl;
+    std::cout << "Score: " << ScoreSeedChain(trimmedChain) << std::endl;
 
     auto infix1 = SeedChainToInfix(seq1, trimmedChain, 'H');
     auto infix2 = SeedChainToInfix(seq2, trimmedChain, 'V');
@@ -333,27 +349,11 @@ Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1,
     AlignConfig<false, false, false, false> globalConfig;
 
     std::cout << "Starting alignment of sequences" << std::endl;
-    auto alnScore = bandedChainAlignment(alignment, chain, scoring, globalConfig);
+    long alnScore = bandedChainAlignment(alignment, trimmedChain, scoring, globalConfig);
     std::cout << "Finishing alignment of sequences" << std::endl;
 
     std::cout << alignment << std::endl;
-    std::cout << "Score: " << alnScore << std::endl;
-    //std::cout << "Rows: "  << length(rows(alignment)) << std::endl;
-    //std::cout << "Row: "   << length(row(alignment, 0)) << std::endl;
-    //std::cout << "Cols: "  << length(cols(alignment)) << std::endl;
-    //std::cout << "Col: "   << value(cols(alignment), 0) << std::endl;
-    //std::cout << "Cols: "  << typeid(rows(alignment)).name()  << std::endl;
-    //std::cout << "Cols: "  << typeid(row(alignment,0)).name() << std::endl;
-    //std::cout << "Col: "   << typeid(cols(alignment)).name()  << std::endl;
-
-    //auto alnCols = cols(alignment);
-    //auto alnRows = rows(alignment);
-    //std::cout << "B1: "  << begin(alnRows[0])  << std::endl;
-    //std::cout << "B1: "   << clippedBeginPosition(alnRows[0]) << std::endl;
-    //std::cout << "B2: "   << clippedBeginPosition(alnRows[1]) << std::endl;
-    //std::cout << "E1: "  << end(alnRows[0]) << std::endl;
-    //std::cout << "E1: "  << clippedEndPosition(alnRows[0]) << std::endl;
-    //std::cout << "E2: "  << clippedEndPosition(alnRows[1]) << std::endl;
+    std::cout << "Alignment Score: " << alnScore << std::endl;
 
     return alignment;
 }

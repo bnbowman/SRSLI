@@ -13,7 +13,11 @@ using namespace seqan;
 
 namespace srsli {
 
-    int ReferenceSet::Length() const
+    size_t ReferenceSet::Size() const
+    {
+        return size;
+    }
+    size_t ReferenceSet::Length() const
     {
         return length(ids);
     }
@@ -38,9 +42,10 @@ namespace srsli {
         std::cout << "file: " << filename    << std::endl;
         std::cout << "fai: "  << faiFilename << std::endl;
 
-        int res = build(faiIndex, filename.c_str(), faiFilename.c_str());
-        if (res != 0)
-            throw std::runtime_error("ERROR: Could not build the index!\n");
+        // Build an FAI index if one doesn't exist
+        //int res = build(faiIndex, filename.c_str(), faiFilename.c_str());
+        //if (res != 0)
+        //    throw std::runtime_error("ERROR: Could not build the index!\n");
 
         // Open file and create RecordReader.
         std::fstream in(filename.c_str(), std::ios::binary | std::ios::in);
@@ -49,5 +54,12 @@ namespace srsli {
         // Iterate over the records in the file
         if (read2(ids, seqs, reader, seqan::Fasta()) != 0)
             throw std::runtime_error("Invalid Fasta file");
+
+        // Tabulate the total size of the reference data set
+        size = 0;
+        for (size_t i = 0; i < length(seqs); ++i)
+        {
+            size += length(seqs[i]);
+        }
     }
 }
