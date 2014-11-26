@@ -19,7 +19,7 @@ namespace srsli {
     }
     size_t ReferenceSet::Length() const
     {
-        return length(ids);
+        return seqCount;
     }
     StringSet<CharString> ReferenceSet::Ids() const
     {
@@ -55,11 +55,17 @@ namespace srsli {
         if (read2(ids, seqs, reader, seqan::Fasta()) != 0)
             throw std::runtime_error("Invalid Fasta file");
 
-        // Tabulate the total size of the reference data set
+        // Set seqCount the current (non-RC'd) number of sequences
+        seqCount = length(seqs);
+
+        // Iterate over the StringSet, adding the RC sequences and sum-ing the lengths
         size = 0;
-        for (size_t i = 0; i < length(seqs); ++i)
+        for (size_t i = 0; i < seqCount; ++i)
         {
-            size += length(seqs[i]);
+            Dna5String rcSeq = seqs[i];
+            reverseComplement(rcSeq);
+            appendValue(seqs, rcSeq);
+            size += 2*length(seqs[i]);  // 2x for Forward + RC
         }
     }
 }

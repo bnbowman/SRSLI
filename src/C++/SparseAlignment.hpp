@@ -72,6 +72,26 @@ void FindSeeds(SeedSet<Simple>& seeds,
     }
 }
 
+typedef std::pair<int, int> SizePosPair;
+
+template<typename T>
+vector<int> GetSeedSetOrder(const vector<T>& seeds)
+{
+    // Convert the vector of SeedSets to a vector of <Pos, Size> pairs
+    vector<SizePosPair> sizeTuples(seeds.size());
+    for (size_t i = 0; i < seeds.size(); ++i)
+        sizeTuples[i] = SizePosPair(length(seeds[i]), i);
+
+    // Sort the pairs in descending order by size
+    sort(sizeTuples.begin(), sizeTuples.end(), std::greater<SizePosPair>());
+
+    // Create a new vector with just the ordered positions to return
+    vector<int> retVal(seeds.size());
+    for (size_t i = 0; i < seeds.size(); ++i )
+        retVal[i] = sizeTuples[i].second;
+
+    return retVal;
+}
 
 template <typename T>
 bool VectorSizeCompare(vector<T> a, vector<T> b)
@@ -179,7 +199,7 @@ void FindSeeds2(SeedSet<Simple>& seeds,
 
 // Find seeds using the index
 template<typename TConfig = FindSeedsConfig<>>
-void FindSeeds3(TSeedSet& seeds,
+void FindSeeds3(vector<TSeedSet>& seeds,
                 Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
                 const size_t& refSize,
                 const Dna5String& query)
@@ -211,15 +231,16 @@ void FindSeeds3(TSeedSet& seeds,
 
         for (size_t i = 0; i < count; ++i)
         {
-            // Find the reference position, 
-            int refPos = getValueI2( hits[i] );
+            // Find the reference position
+            size_t refSeq = getValueI1( hits[i] );
+            size_t refPos = getValueI2( hits[i] );
             TSeed seed = TSeed(qPos, refPos, TConfig::Size);
             setScore(seed, score);
             //std::cout << seed << " " << seqan::score(seed) << " " << score << std::endl;
             
-            if (!addSeed(seeds, seed, 0, Merge()))
+            if (!addSeed(seeds[refSeq], seed, 0, Merge()))
             {
-                addSeed(seeds, seed, Single());
+                addSeed(seeds[refSeq], seed, Single());
             }
         }
     }
@@ -285,7 +306,7 @@ Segment<const Dna5String> SeedChainToInfix(const Dna5String& seq,
        startPos = beginPositionV(front(chain));
        endPos   = endPositionV(back(chain));
     }
-    std::cout << "S: " << startPos << "E: " << endPos << std::endl;
+    //std::cout << "S: " << startPos << " E: " << endPos << std::endl;
     return infix(seq, 0, endPos);
 }
 
@@ -319,6 +340,8 @@ Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1,
     std::cout << "Finishing chaining seeds" << std::endl;
     std::cout << "Chain: " << length(chain) << std::endl;
 
+    //sort(indexHits.begin(), indexHits.end(), VectorSizeCompare<Position>);
+
     for (auto it = begin(chain, seqan::Standard()); it != end(chain, seqan::Standard()); ++it)
     {
         int i = beginPositionH(*it);
@@ -351,9 +374,6 @@ Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1,
     std::cout << "Starting alignment of sequences" << std::endl;
     long alnScore = bandedChainAlignment(alignment, trimmedChain, scoring, globalConfig);
     std::cout << "Finishing alignment of sequences" << std::endl;
-
-    std::cout << alignment << std::endl;
-    std::cout << "Alignment Score: " << alnScore << std::endl;
 
     return alignment;
 }

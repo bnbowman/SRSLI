@@ -14,12 +14,13 @@ namespace srsli {
     class ReferenceSet {
 
     private:
-        size_t size;
         std::string filename;
         std::string faiFilename;
+        FaiIndex faiIndex;
         StringSet<CharString> ids;
         StringSet<Dna5String> seqs;
-        FaiIndex faiIndex;
+        size_t size;
+        size_t seqCount;
 
     public:
         size_t Size() const;

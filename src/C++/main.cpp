@@ -1,6 +1,6 @@
 // Author: Brett Bowman
 
-#include <map>
+#include <math.h>
 #include <zlib.h>
 #include <stdio.h>
 
@@ -31,15 +31,27 @@ int main(int argc, char const ** argv)
                            "results with standard dynamic programming methods");
     addUsageLine(parser,  "\\fIQUERY\\fP \\fIREFERENCE\\fP [\\fIOPTIONS\\fP]");
 
+    // Define Required (Positional) Arguments
     addArgument(parser, ArgParseArgument(
                 ArgParseArgument::STRING, "QUERY"));
     addArgument(parser, ArgParseArgument(
                 ArgParseArgument::STRING, "REFERENCE"));
 
+    // Define Optional arguments
+    addOption(parser, ArgParseOption(
+                "m", "minScore", "Minimum score to require from any alignment",
+                ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption(
+                "n", "nCandidates", "Number of candidate alignments to score",
+                ArgParseArgument::INTEGER, "INT"));
     addOption(parser, ArgParseOption(
                 "s", "seedSize", "Size to use when searching for alignment seeds.",
                 ArgParseArgument::INTEGER, "INT"));
-    setDefaultValue(parser, "seedSize", "12");
+
+    // Set default values
+    setDefaultValue(parser, "minScore",    "1000");
+    setDefaultValue(parser, "nCandidates", "1"   );
+    setDefaultValue(parser, "seedSize", "   12"  );
 
     // Parse command line.
     seqan::ArgumentParser::ParseResult res = parse(parser, argc, argv);
@@ -52,11 +64,15 @@ int main(int argc, char const ** argv)
     // Extract the arguments from the Parser
     std::string query;
     std::string reference;
+    int minScore;
+    int nCandidates;
     int seedSize;
 
     getArgumentValue(query, parser, 0);
     getArgumentValue(reference, parser, 1);
-    getOptionValue(seedSize, parser, "seedSize");
+    getOptionValue(minScore,    parser, "minScore");
+    getOptionValue(nCandidates, parser, "nCandidates");
+    getOptionValue(seedSize,    parser, "seedSize");
 
     // Use the options to set the configs and scoring schemes
     Score<long, Simple> scoringScheme(4, -13, -7);
@@ -73,27 +89,37 @@ int main(int argc, char const ** argv)
     std::pair<size_t, SequenceRecord> idxAndRecord;
 
     // Define the variable where the initial hits for the query will be stored
-    //map<size_t, SeedSet<Simple>> querySeedHits;
-    TSeedSet querySeedHits;
+    //map<size_t, TSeedSet> querySeedHits;
+    vector<TSeedSet> querySeedHits(2, TSeedSet());
+    //TSeedSet querySeedHits;
+
+    std::cout << refSet.Size() << std::endl;
+    std::cout << refSet.Length() << std::endl;
 
     for ( ; seqReader.GetNext(idxAndRecord) ; )
     {
         std::cout << "Query #" << idxAndRecord.first+1 << " - "<< idxAndRecord.second.Id << std::endl;
 
-        // For each query sequence, compare it to the ReferenceSet
-        //for (unsigned i = 0; i < refSet.Length(); ++i)
-        //    std::cout << "Ref " << refSet.Ids()[i] << '\t' << refSet.Sequences()[i] << std::endl;
-
         // Find the Kmer matches for the current query sequence
         FindSeeds3(querySeedHits, refSetIndex, refSet.Size(), idxAndRecord.second.Seq);
         std::cout << "Finished finding seeds" << std::endl;
 
-        // Chain the initial Kmer hits into an alignment
-        auto align = SeedsToAlignment(idxAndRecord.second.Seq, 
-                                      refSet.Sequences()[0],
-                                      querySeedHits,
-                                      scoringScheme);
+        vector<int> seedSetOrder = GetSeedSetOrder(querySeedHits);
 
-        //querySeedHits.clear();
+        int maxAligns = std::min((int)seedSetOrder.size(), nCandidates);
+        for (size_t i = 0; i < maxAligns; ++i)
+        {
+            // Chain the initial Kmer hits into an alignment
+            int seedSetIdx = seedSetOrder[i];
+            auto align = SeedsToAlignment(idxAndRecord.second.Seq, 
+                                          refSet.Sequences()[seedSetIdx],
+                                          querySeedHits[seedSetIdx],
+                                          scoringScheme);
+        
+            std::cout << align << std::endl;
+        }
+
+        // Empty the seedHits variable before the next iteration
+        querySeedHits.clear();
     }
 }
