@@ -1,12 +1,13 @@
 add_library (SRSLI_lib
-        ReferenceSet.cpp
-        SequenceReader.cpp
-	Version.cpp
-	)
+    ReferenceSet.cpp
+    SequenceReader.cpp
+	  Version.cpp
+    SeedIntervals.cpp
+)
 
 add_executable (srsli
-	main.cpp
-    )
+    main.cpp
+)
 
 target_link_libraries(srsli SRSLI_lib ${SEQAN_LIBRARIES})
 
