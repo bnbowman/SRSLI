@@ -1,8 +1,11 @@
-// Author: Brett Bowman
+// Copyright 2014 Brett Bowman
 
 #include <math.h>
 #include <zlib.h>
 #include <stdio.h>
+#include <utility>
+#include <string>
+#include <vector>
 
 #include <seqan/arg_parse.h>
 #include <seqan/seeds.h>
@@ -11,7 +14,7 @@
 #include "Utils.hpp"
 #include "Version.hpp"
 #include "SeqAnConfig.hpp"
-#include "SrsliParameters.h"
+#include "SrsliParameters.hpp"
 #include "ReferenceSet.hpp"
 #include "SequenceReader.hpp"
 #include "SparseAlignment.hpp"
@@ -21,16 +24,17 @@ using namespace seqan;
 using namespace srsli;
 
 // Entry point
-int main(int argc, char const ** argv)
-{
+int main(int argc, char const ** argv) {
     // Setup ArgumentParser.
     seqan::ArgumentParser parser("srsli");
     setDate(parser, Version::Date());
     setVersion(parser, Version::VersionString());
-    setShortDescription(parser, "Successively Refined alignment after Sparse Local Indexing");
-    addDescription(parser, "Quickly and efficiently map single-molecule sequencing reads to a "
-                           "set of reference sequences via sparse local indexing, then refine the "
-                           "results with standard dynamic programming methods");
+    setShortDescription(parser,
+            "Successively Refined alignment after Sparse Local Indexing");
+    addDescription(parser, "Quickly and efficiently map single-molecule"
+            " sequencing reads to a set of reference sequences via sparse"
+            " local indexing, then refine the results with standard dynamic"
+            " programming methods");
     addUsageLine(parser,  "\\fIQUERY\\fP \\fIREFERENCE\\fP [\\fIOPTIONS\\fP]");
 
     // Define Required (Positional) Arguments
@@ -41,23 +45,24 @@ int main(int argc, char const ** argv)
 
     // Define Optional arguments
     addOption(parser, ArgParseOption(
-                "m", "minScore", "Minimum score to require from any alignment",
-                ArgParseArgument::INTEGER, "INT"));
+            "m", "minScore", "Minimum score to require from any alignment",
+            ArgParseArgument::INTEGER, "INT"));
     addOption(parser, ArgParseOption(
-                "n", "nCandidates", "Number of candidate alignments to score",
-                ArgParseArgument::INTEGER, "INT"));
+            "n", "nCandidates", "Number of candidate alignments to score",
+            ArgParseArgument::INTEGER, "INT"));
     addOption(parser, ArgParseOption(
-                "s", "seedSize", "Size to use when searching for alignment seeds.",
-                ArgParseArgument::INTEGER, "INT"));
+            "s", "seedSize", "Size to use when searching for alignment seeds.",
+            ArgParseArgument::INTEGER, "INT"));
     addOption(parser, ArgParseOption(
-                "v", "verbosity", "Verbosity of process information to report [0..3].",
-                ArgParseArgument::INTEGER, "INT"));
+            "v", "verbosity",
+            "Verbosity of process information to report [0..3].",
+            ArgParseArgument::INTEGER, "INT"));
 
     // Set default values
     setDefaultValue(parser, "minScore",    "1000");
-    setDefaultValue(parser, "nCandidates", "1"   );
-    setDefaultValue(parser, "seedSize",    "12"  );
-    setDefaultValue(parser, "verbosity",   "1"   );
+    setDefaultValue(parser, "nCandidates", "1");
+    setDefaultValue(parser, "seedSize",    "12");
+    setDefaultValue(parser, "verbosity",   "1");
 
     // Parse command line.
     seqan::ArgumentParser::ParseResult res = parse(parser, argc, argv);
@@ -86,7 +91,7 @@ int main(int argc, char const ** argv)
     getOptionValue(verbosity,   parser, "verbosity");
 
     // Use the options to set the configs and scoring schemes
-    Score<long, Simple> scoringScheme(4, -13, -7);
+    Score<int64_t, Simple> scoringScheme(4, -13, -7);
 
     typedef FindSeedsConfig<12> TConfig;
 
@@ -94,7 +99,7 @@ int main(int argc, char const ** argv)
     ReferenceSet refSet = ReferenceSet(reference);
     auto refSetIndex = refSet.GetIndex<TConfig>();
     indexRequire(refSetIndex, QGramSADir());  // On-demand index creation.
-   
+
     // Create an iterator for the query sequences and a pair for it to return to
     SequenceReader seqReader = SequenceReader(query);
     std::pair<size_t, SequenceRecord> idxAndRecord;
@@ -103,24 +108,26 @@ int main(int argc, char const ** argv)
     vector<TSeedSet> querySeedSets(2, TSeedSet());
     vector<vector<TSeed>> querySeedHits(2);
     vector<vector<TSeed>> querySeedChains;
-    //TSeedSet querySeedHits;
 
     std::cout << refSet.Size() << std::endl;
     std::cout << refSet.Length() << std::endl;
 
-    for ( ; seqReader.GetNext(idxAndRecord) ; )
-    {
-        std::cout << "Query #" << idxAndRecord.first+1 << " - "<< idxAndRecord.second.Id << std::endl;
+    for ( ; seqReader.GetNext(idxAndRecord) ; ) {
+        // Display current query
+        SequenceRecord* record = &idxAndRecord.second;
+        std::cout << "Query #" << idxAndRecord.first+1
+                  << " - " << record->Id << std::endl;
 
         // Calculate the maximum expected interval size, given the query length
-        size_t maxIntervalLength = length(idxAndRecord.second.Seq) * params.maxNetIndelRate;
+        size_t maxIntervalLength = length(record->Seq) * params.maxNetIndelRate;
 
         // Find the Kmer matches for the current query sequence
         std::cout << "Looking for seeds" << std::endl;
-        FindSeeds3(querySeedSets, refSetIndex, refSet.Size(), idxAndRecord.second.Seq);
+        FindSeeds3(querySeedSets, refSetIndex, refSet.Size(), record->Seq);
         std::cout << "Finished finding seeds" << std::endl;
 
-        // Sort the Kmer matches by reference position, which involves converting them to vectors
+        // Sort the Kmer matches by reference position, which involves
+        //    converting them to vectors
         std::cout << "Sorting seeds" << std::endl;
         SeedSetsToSeedVectors(querySeedSets, querySeedHits);
         std::cout << "Finished sorting seeds" << std::endl;
@@ -131,30 +138,31 @@ int main(int argc, char const ** argv)
         std::cout << "Finished selecting seed intervals" << std::endl;
 
         std::cout << "Converting seed intervals to seed chains" << std::endl;
-        SeedIntervalsToSeedChains(querySeedChains, querySeedHits, seedIntervals);
-        std::cout << "Finished converting seed intervals to chains" << std::endl;
+        SeedIntervalsToSeedChains(querySeedChains,
+                                  querySeedHits,
+                                  seedIntervals);
+        std::cout << "Finished conversion to seed chains" << std::endl;
 
-        for (size_t i = 0; i < querySeedChains.size(); ++i)
-        {
+        for (size_t i = 0; i < querySeedChains.size(); ++i) {
             auto temp = querySeedChains[i];
-            std::cout << "Idx #" << i << " L " << temp.size() << " Pos "<< GetSeedChainStartPos(temp) << " -- " << GetSeedChainEndPos(temp) << std::endl;
+            std::cout << "Idx #" << i
+                      << " L " << temp.size()
+                      << " Pos "<< GetSeedChainStartPos(temp)
+                      << " -- " << GetSeedChainEndPos(temp) << std::endl;
         }
 
-        //vector<int> seedSetOrder = GetSeedSetOrder(querySeedHits);
-
-        //int maxAligns = std::min((int)seedSetOrder.size(), nCandidates);
-        //for (size_t i = 0; i < maxAligns; ++i)
-        //{
-            // Chain the initial Kmer hits into an alignment
+        // vector<int> seedSetOrder = GetSeedSetOrder(querySeedHits);
+        // int maxAligns = std::min((int)seedSetOrder.size(), nCandidates);
+        // for (size_t i = 0; i < maxAligns; ++i)
+        // {
+        // Chain the initial Kmer hits into an alignment
         //    int seedSetIdx = seedSetOrder[i];
-        //    auto align = SeedsToAlignment(idxAndRecord.second.Seq, 
+        //    auto align = SeedsToAlignment(idxAndRecord.second.Seq,
         //                                  refSet.Sequences()[seedSetIdx],
         //                                  querySeedHits[seedSetIdx],
         //                                  scoringScheme);
-        
         //    std::cout << align << std::endl;
-        //}
-
+        // }
         // Empty the seedHits variable before the next iteration
         querySeedHits.clear();
     }

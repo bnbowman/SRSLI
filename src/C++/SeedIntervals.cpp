@@ -3,7 +3,7 @@
 
 #include <seqan/seeds.h>
 
-#include "SeedIntervals.h"
+#include "SeedIntervals.hpp"
 #include "ReferenceSet.hpp"
 #include "SeqAnConfig.hpp"
 
