@@ -25,92 +25,30 @@ using namespace srsli;
 
 // Entry point
 int main(int argc, char const ** argv) {
-    // Setup ArgumentParser.
-    seqan::ArgumentParser parser("srsli");
-    setDate(parser, Version::Date());
-    setVersion(parser, Version::VersionString());
-    setShortDescription(parser,
-            "Successively Refined alignment after Sparse Local Indexing");
-    addDescription(parser, "Quickly and efficiently map single-molecule"
-            " sequencing reads to a set of reference sequences via sparse"
-            " local indexing, then refine the results with standard dynamic"
-            " programming methods");
-    addUsageLine(parser,  "\\fIQUERY\\fP \\fIREFERENCE\\fP [\\fIOPTIONS\\fP]");
 
-    // Define Required (Positional) Arguments
-    addArgument(parser, ArgParseArgument(
-                ArgParseArgument::STRING, "QUERY"));
-    addArgument(parser, ArgParseArgument(
-                ArgParseArgument::STRING, "REFERENCE"));
+    // Parse the command-line arguments into usable parameters
+    SrsliParameters params(argc, argv);
 
-    // Define Optional arguments
-    addOption(parser, ArgParseOption(
-            "m", "minScore", "Minimum score to require from any alignment",
-            ArgParseArgument::INTEGER, "INT"));
-    addOption(parser, ArgParseOption(
-            "n", "nCandidates", "Number of candidate alignments to score",
-            ArgParseArgument::INTEGER, "INT"));
-    addOption(parser, ArgParseOption(
-            "s", "seedSize", "Size to use when searching for alignment seeds.",
-            ArgParseArgument::INTEGER, "INT"));
-    addOption(parser, ArgParseOption(
-            "v", "verbosity",
-            "Verbosity of process information to report [0..3].",
-            ArgParseArgument::INTEGER, "INT"));
-
-    // Set default values
-    setDefaultValue(parser, "minScore",    "1000");
-    setDefaultValue(parser, "nCandidates", "1");
-    setDefaultValue(parser, "seedSize",    "12");
-    setDefaultValue(parser, "verbosity",   "1");
-
-    // Parse command line.
-    seqan::ArgumentParser::ParseResult res = parse(parser, argc, argv);
-
-    // If parsing was not successful then exit with code 1 if there were errors.
-    // Otherwise, exit with code 0 (e.g. help was printed).
-    if (res != seqan::ArgumentParser::PARSE_OK)
-        return res == seqan::ArgumentParser::PARSE_ERROR;
-
-    // If parsing was successful, initialize the parameters
-    SrsliParameters params;
-
-    // Extract the arguments from the Parser
-    std::string query;
-    std::string reference;
-    int minScore;
-    int nCandidates;
-    int seedSize;
-    int verbosity;
-
-    getArgumentValue(query,     parser, 0);
-    getArgumentValue(reference, parser, 1);
-    getOptionValue(minScore,    parser, "minScore");
-    getOptionValue(nCandidates, parser, "nCandidates");
-    getOptionValue(seedSize,    parser, "seedSize");
-    getOptionValue(verbosity,   parser, "verbosity");
+    // Abort if we could not parse the supplied arguments
+    if (params.parseOk == 0)
+        return 1;
 
     // Use the options to set the configs and scoring schemes
     Score<int64_t, Simple> scoringScheme(4, -13, -7);
 
-    typedef FindSeedsConfig<12> TConfig;
-
     // Read the reference sequences into memory
-    ReferenceSet refSet = ReferenceSet(reference);
+    typedef FindSeedsConfig<12> TConfig;
+    ReferenceSet refSet = ReferenceSet(params.reference);
     auto refSetIndex = refSet.GetIndex<TConfig>();
     indexRequire(refSetIndex, QGramSADir());  // On-demand index creation.
 
     // Create an iterator for the query sequences and a pair for it to return to
-    SequenceReader seqReader = SequenceReader(query);
+    SequenceReader seqReader = SequenceReader(params.query);
     std::pair<size_t, SequenceRecord> idxAndRecord;
-
     // Define the variable where the initial hits for the query will be stored
     vector<TSeedSet> querySeedSets(2, TSeedSet());
     vector<vector<TSeed>> querySeedHits(2);
     vector<vector<TSeed>> querySeedChains;
-
-    std::cout << refSet.Size() << std::endl;
-    std::cout << refSet.Length() << std::endl;
 
     for ( ; seqReader.GetNext(idxAndRecord) ; ) {
         // Display current query

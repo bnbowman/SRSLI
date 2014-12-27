@@ -17,6 +17,29 @@ struct SeedReferencePositionFunctor {
     }
 } seedReferencePositionComparer;
 
+template<typename TSeed>
+size_t GetSeedNumBases(const TSeed seed)
+{
+    return endPositionV(seed) - beginPositionV(seed);
+}
+
+template<typename TSeed>
+size_t SumSeedChainBases(const vector<TSeed>& chain)
+{
+    size_t sum = 0;
+    for (size_t i = 0; i < length(chain); ++i)
+    {
+        sum += GetSeedNumBases(chain[i]);
+    }
+    return sum;
+}
+
+struct SeedChainNumBasesFunctor {
+    bool operator()(const vector<TSeed>& chain1, const vector<TSeed>& chain2)
+    {
+        return SumSeedChainBases(chain1) > SumSeedChainBases(chain2);
+    }
+} seedChainNumBasesComparer;
 
 template<typename TSeed>
 void SeedSetsToSeedVectors(vector<TSeedSet>& sets,
@@ -41,10 +64,10 @@ void SeedSetsToSeedVectors(vector<TSeedSet>& sets,
         // Sort each vector after it's been filled by reference position
         std::sort(vectors[i].begin(), vectors[i].end(), seedReferencePositionComparer);
 
-        for (int j = 0; j < vectors[i].size(); ++j)
-        {
-            std::cout << vectors[i][j] << std::endl;
-        }
+        //for (int j = 0; j < vectors[i].size(); ++j)
+        //{
+        //    std::cout << vectors[i][j] << std::endl;
+        //}
     }
 }
 
@@ -70,6 +93,18 @@ int AdvanceIndexToIntervalEnd(const vector<TSeed>& seeds,
 
     // If we made it this far, return 0 for successful completion
     return 0;
+}
+
+template<typename TSeed>
+size_t SumIntervalSeedlengths(const vector<TSeed>& seeds, 
+                              const size_t& start,
+                              const size_t& end)
+{
+    size_t sum = 0;
+
+    return sum;
+    
+
 }
 
 template<typename TSeed>
@@ -146,12 +181,15 @@ int SeedIntervalsToSeedChains(vector<vector<TSeed>>& chains,
                               const vector<vector<TSeed>>& seedVecs,
                               const vector<SeedInterval>& intervals)
 {
+    size_t minSeedChainBases = 30;
+
     // Allocate a seedSet and chain for intermediate use
     TSeedSet seedSet;
     vector<TSeed> chain;
     size_t prevIdx;
     int endPos, prevEndPos;
     int startPos, prevStartPos;
+    size_t numChainBases;
 
     for (size_t i = 0; i < intervals.size(); ++i)
     {
@@ -167,6 +205,10 @@ int SeedIntervalsToSeedChains(vector<vector<TSeed>>& chains,
         chainSeedsGlobally(chain, seedSet, SparseChaining());
         startPos = GetSeedChainStartPos(chain);
         endPos = GetSeedChainEndPos(chain);
+     
+        // Skip seed chains with very little supporting evidence
+        if (minSeedChainBases > SumSeedChainBases(chain))
+            continue;
 
         // Add the chain to our current vector of possible chains
         //    which is automatic if there are no previous chains
@@ -181,8 +223,8 @@ int SeedIntervalsToSeedChains(vector<vector<TSeed>>& chains,
         } else if (startPos == prevStartPos && endPos > prevEndPos ) {
             chains[prevIdx] = chain;
 
-        // On the other hand, if we have the same end and a lesser start, skip it
-        } else if (startPos > prevStartPos && endPos == prevEndPos) {
+        // On the other hand, if we have the same end and a lesser-or-matching start, skip it
+        } else if (startPos >= prevStartPos && endPos == prevEndPos) {
             continue;
 
         // Finally, if neither of these is true and we have a novel chain, add it
@@ -193,6 +235,9 @@ int SeedIntervalsToSeedChains(vector<vector<TSeed>>& chains,
             prevIdx++;
         }
     }
+
+    // Finally, we sort the SeedChains we found by the number of bp matches they represent
+    std::sort(chains.begin(), chains.end(), seedChainNumBasesComparer);
 
     // If we made it this far, return 0 for successful completion
     return 0;
