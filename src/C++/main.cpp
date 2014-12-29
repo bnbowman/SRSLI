@@ -59,7 +59,7 @@ int main(int argc, char const ** argv) {
 
         // Find the Kmer matches for the current query sequence
         std::cout << "Looking for seeds" << std::endl;
-        FindSeeds3(querySeedSets, refSetIndex, refSet.Size(), record->Seq);
+        FindSeeds(querySeedSets, refSetIndex, refSet.Size(), record->Seq);
         std::cout << "Finished finding seeds" << std::endl;
 
         // Sort the Kmer matches by reference position, which involves
