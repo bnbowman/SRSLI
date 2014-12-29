@@ -1,7 +1,7 @@
 add_library (SRSLI_lib
     ReferenceSet.cpp
-    SequenceReader.cpp
     SeedIntervals.cpp
+    SequenceReader.cpp
     parameters/Version.cpp
 )
 
