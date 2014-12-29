@@ -11,10 +11,8 @@
 #include <seqan/seeds.h>
 #include <seqan/index.h>
 
-#include "Utils.hpp"
-#include "Version.hpp"
-#include "SeqAnConfig.hpp"
-#include "SrsliParameters.hpp"
+#include "config/SeqAnConfig.hpp"
+#include "parameters/SrsliParameters.hpp"
 #include "ReferenceSet.hpp"
 #include "SequenceReader.hpp"
 #include "SparseAlignment.hpp"

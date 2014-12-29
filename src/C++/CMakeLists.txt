@@ -1,8 +1,8 @@
 add_library (SRSLI_lib
     ReferenceSet.cpp
     SequenceReader.cpp
-	  Version.cpp
     SeedIntervals.cpp
+    parameters/Version.cpp
 )
 
 add_executable (srsli

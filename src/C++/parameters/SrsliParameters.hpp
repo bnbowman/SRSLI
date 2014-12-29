@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "Version.hpp"
+
 using namespace srsli;
 
 class SrsliParameters {
@@ -50,8 +52,8 @@ class SrsliParameters {
     {
         // Setup ArgumentParser.
         seqan::ArgumentParser parser("srsli");
-        setDate(parser, Version::Date());
-        setVersion(parser, Version::VersionString());
+        setDate(parser, srsli::Version::Date());
+        setVersion(parser, srsli::Version::VersionString());
         setShortDescription(parser,
                 "Successively Refined alignment after Sparse Local Indexing");
         addDescription(parser, "Quickly and efficiently map single-molecule"

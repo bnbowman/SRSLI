@@ -1,6 +1,6 @@
 #pragma once
 #include <seqan/seeds.h>
-#include "../SeqAnConfig.hpp"
+#include "../config/SeqAnConfig.hpp"
 
 
 // Begin Utility Functions

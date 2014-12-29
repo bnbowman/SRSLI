@@ -14,7 +14,7 @@
 #include <seqan/seeds.h>
 #include <seqan/sequence.h>
 
-#include "SeqAnConfig.hpp"
+#include "config/SeqAnConfig.hpp"
 
 using namespace std;
 using namespace seqan;
@@ -78,103 +78,6 @@ template <typename T>
 bool VectorSizeCompare(vector<T> a, vector<T> b)
 {
     return a.size() < b.size();
-}
-
-
-template<typename TConfig = FindSeedsConfig<>>
-void FindSeeds(map<size_t, SeedSet<Simple>>& seeds,
-               Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
-               const Dna5String& seq,
-               double mask = 0.999)
-{
-    // TODO (lhepler) : the mask refers to most common indices,
-    //                  not most common kmers. You should probably fix that.
-    using std::sort;
-
-    typedef Pair<size_t, size_t> Position;
-
-    Finder<Index<StringSet<Dna5String>, typename TConfig::IndexType>> finder(index);
-    vector<vector<Position>> indexHits;
-    size_t end = SafeSubtract(length(seq), TConfig::Size);
-
-    indexHits.resize(end);
-
-
-    // accumulate all the found indexHits by their index in seq
-    for (size_t i = 0; i < end; i++)
-    {
-        Infix<const Dna5String>::Type kmer = infix(seq, i, i + TConfig::Size);
-
-        if (IsHomopolymer(kmer))
-            continue;
-        
-        while (find(finder, kmer))
-        {
-            Position pos = position(finder);
-            indexHits[i].push_back(pos);
-        }
-
-        clear(finder);
-    }
-
-    //std::cout << "Found positions, sorting" << std::endl;
-    
-    // sort indexHits by the number of hits found
-    sort(indexHits.begin(), indexHits.end(), VectorSizeCompare<Position>);
-
-    size_t maxHits = static_cast<size_t>(mask * indexHits.size());
-
-    // cutoff the top (1-mask) hits by index (not top (1-mask) kmers)
-    for (size_t i = 0; i < maxHits; i++)
-    {
-        for (const Position& pos : indexHits[i])
-        {
-            size_t idx = getValueI1(pos);
-
-            Seed<Simple> seed(i, getValueI2(pos), TConfig::Size);
-
-            if (!addSeed(seeds[idx], seed, 0, Merge()))
-            {
-                addSeed(seeds[idx], seed, Single());
-            }
-        }
-    }
-}
-
-// Find seeds using a qgramFinder
-template<typename TConfig = FindSeedsConfig<>>
-void FindSeeds2(SeedSet<Simple>& seeds,
-                Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
-                const Dna5String& query)
-{
-    typedef Shape<Dna5, typename TConfig::ShapeType> TShape;
-    typedef StringSet<Dna5String> TStringSet;
-    typedef Index<TStringSet, typename TConfig::IndexType> TIndex;
-    typedef Finder<TIndex> TFinder;
-    typedef Infix<const Dna5String> TInfix;
-    typedef Iterator<const Dna5String, Standard>::Type TIterator;
-
-    TFinder qgramFinder(index);
-    for (TIterator it = begin(query, Standard()); it != end(query, Standard()) - 12; ++it)
-    {
-        int qPos = position(it, query);
-        Dna5String qgram = infix(query, it, it+12);
-                
-        while(find(qgramFinder, qgram))
-        {
-            // Find the reference position, 
-            int refPos = getValueI2( position(qgramFinder) );
-            Seed<Simple> seed(qPos, refPos, TConfig::Size);
-            
-            if (!addSeed(seeds, seed, 0, Merge()))
-            {
-                addSeed(seeds, seed, Single());
-            }
-        }
-
-        // Clear finder for next search.
-        clear(qgramFinder); 
-    }
 }
 
 

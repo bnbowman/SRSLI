@@ -6,7 +6,7 @@
 #include "utils/SeedChain.cpp"
 #include "SeedIntervals.hpp"
 #include "ReferenceSet.hpp"
-#include "SeqAnConfig.hpp"
+#include "config/SeqAnConfig.hpp"
 
 using namespace seqan;
 using namespace srsli;

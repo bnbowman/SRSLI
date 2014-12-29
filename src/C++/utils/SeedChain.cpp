@@ -2,7 +2,7 @@
 #include <vector>
 #include <seqan/seeds.h>
 
-#include "../SeqAnConfig.hpp"
+#include "../config/SeqAnConfig.hpp"
 #include "Seed.cpp"
 
 
