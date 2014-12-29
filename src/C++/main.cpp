@@ -46,7 +46,7 @@ int main(int argc, char const ** argv) {
     // Define the variable where the initial hits for the query will be stored
     vector<TSeedSet> querySeedSets(2, TSeedSet());
     vector<vector<TSeed>> querySeedHits(2);
-    vector<vector<TSeed>> querySeedChains;
+    vector<ReferencedSeedChain> querySeedChains;
 
     for ( ; seqReader.GetNext(idxAndRecord) ; ) {
         // Display current query
@@ -79,13 +79,15 @@ int main(int argc, char const ** argv) {
                                   seedIntervals);
         std::cout << "Finished conversion to seed chains" << std::endl;
 
-        //for (size_t i = 0; i < querySeedChains.size(); ++i) {
-        //    auto temp = querySeedChains[i];
-        //    std::cout << "Idx #" << i
-        //              << " L " << temp.size()
-        //              << " Pos "<< GetSeedChainStartPos(temp)
-        //              << " -- " << GetSeedChainEndPos(temp) << std::endl;
-        //}
+        for (size_t i = 0; i < querySeedChains.size(); ++i) {
+            auto temp = querySeedChains[i];
+            vector<TSeed>* chain = &temp.second;
+            std::cout << "Idx #" << i
+                      << " Ref #" << temp.first
+                      << " L " << chain->size()
+                      << " Pos "<< GetSeedChainStartPos(*chain)
+                      << " -- " << GetSeedChainEndPos(*chain) << std::endl;
+        }
 
         //int maxAligns = std::min((int)querySeedChains.size(), params.nCandidates);
         //for (size_t i = 0; i < maxAligns; ++i)

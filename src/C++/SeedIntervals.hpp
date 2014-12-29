@@ -6,14 +6,10 @@
 #include <seqan/seeds.h>
 
 #include "config/SeqAnConfig.hpp"
+#include "config/Types.hpp"
 
 using namespace std;
 using namespace seqan;
-
-// These tuples represent a SeedSet and a Start and End index that
-//   identify the seeds representing the 5' and 3' most seed anchors
-//   for a hit
-typedef std::tuple<size_t, size_t, size_t> SeedInterval;
 
 template<typename TSeed>
 void SeedSetsToSeedVectors(vector<TSeedSet>& sets,
