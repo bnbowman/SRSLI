@@ -74,25 +74,6 @@ void FindSeeds(SeedSet<Simple>& seeds,
 
 typedef std::pair<int, int> SizePosPair;
 
-template<typename T>
-vector<int> GetSeedSetOrder(const vector<T>& seeds)
-{
-    // Convert the vector of SeedSets to a vector of <Pos, Size> pairs
-    vector<SizePosPair> sizeTuples(seeds.size());
-    for (size_t i = 0; i < seeds.size(); ++i)
-        sizeTuples[i] = SizePosPair(length(seeds[i]), i);
-
-    // Sort the pairs in descending order by size
-    sort(sizeTuples.begin(), sizeTuples.end(), std::greater<SizePosPair>());
-
-    // Create a new vector with just the ordered positions to return
-    vector<int> retVal(seeds.size());
-    for (size_t i = 0; i < seeds.size(); ++i )
-        retVal[i] = sizeTuples[i].second;
-
-    return retVal;
-}
-
 template <typename T>
 bool VectorSizeCompare(vector<T> a, vector<T> b)
 {
@@ -306,7 +287,7 @@ Segment<const Dna5String> SeedChainToInfix(const Dna5String& seq,
        startPos = beginPositionV(front(chain));
        endPos   = endPositionV(back(chain));
     }
-    //std::cout << "S: " << startPos << " E: " << endPos << std::endl;
+    std::cout << "S: " << startPos << " E: " << endPos << std::endl;
     return infix(seq, 0, endPos);
 }
 
@@ -322,48 +303,15 @@ float ScoreSeedChain(const TSeedString& chain)
     return score;
 }
 
-
 //TODO: Why isn't the global align config working?
 template<typename TAlignConfig = GlobalAlignConfig>
 Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1, 
                                               const Dna5String& seq2,
-                                              SeedSet<Simple>& seeds,
+                                              const String<TSeed>& chain,
                                               const Score<long, Simple>& scoring)
 {
-    //SeedSet<Simple> seeds2;
-    //addSeed(seeds2, TSeed(  12,   12, 100), seqan::Single());
-    //addSeed(seeds2, TSeed( 120,  120, 100), seqan::Single());
-    
-    String<Seed<Simple>> chain;
-    std::cout << "Seeds: " << length(seeds) << std::endl;
-    chainSeedsGlobally(chain, seeds, SparseChaining());
-    std::cout << "Finishing chaining seeds" << std::endl;
-    std::cout << "Chain: " << length(chain) << std::endl;
-
-    //sort(indexHits.begin(), indexHits.end(), VectorSizeCompare<Position>);
-
-    for (auto it = begin(chain, seqan::Standard()); it != end(chain, seqan::Standard()); ++it)
-    {
-        int i = beginPositionH(*it);
-        int j = endPositionH(*it);
-        std::cout << *it << " " << "Length: " << j-i << "\n";
-    }
-
-    std::cout << "Initial Chain" << std::endl;
-    std::cout << "First: " << front(chain) << std::endl;
-    std::cout << "Last: " << back(chain) << std::endl;
-    std::cout << "Score: " << ScoreSeedChain(chain) << std::endl;
-
-    TSeedString trimmedChain = TrimSeedChain(chain, 30);
-
-    std::cout << "Trimmed Chain" << std::endl;
-    std::cout << "Length: " << length(trimmedChain) << std::endl;
-    std::cout << "First: " << front(trimmedChain) << std::endl;
-    std::cout << "Last: " << back(trimmedChain) << std::endl;
-    std::cout << "Score: " << ScoreSeedChain(trimmedChain) << std::endl;
-
-    auto infix1 = SeedChainToInfix(seq1, trimmedChain, 'H');
-    auto infix2 = SeedChainToInfix(seq2, trimmedChain, 'V');
+    auto infix1 = SeedChainToInfix(seq1, chain, 'H');
+    auto infix2 = SeedChainToInfix(seq2, chain, 'V');
 
     Align<Dna5String, ArrayGaps> alignment;
     resize(rows(alignment), 2);
@@ -372,7 +320,7 @@ Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1,
     AlignConfig<false, false, false, false> globalConfig;
 
     std::cout << "Starting alignment of sequences" << std::endl;
-    long alnScore = bandedChainAlignment(alignment, trimmedChain, scoring, globalConfig);
+    long alnScore = bandedChainAlignment(alignment, chain, scoring, globalConfig);
     std::cout << "Finishing alignment of sequences" << std::endl;
 
     return alignment;

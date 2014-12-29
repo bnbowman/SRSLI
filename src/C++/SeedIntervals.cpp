@@ -1,45 +1,15 @@
-
 #include <vector>
 
 #include <seqan/seeds.h>
 
+#include "utils/Seed.cpp"
+#include "utils/SeedChain.cpp"
 #include "SeedIntervals.hpp"
 #include "ReferenceSet.hpp"
 #include "SeqAnConfig.hpp"
 
 using namespace seqan;
 using namespace srsli;
-
-struct SeedReferencePositionFunctor {
-    bool operator()(const TSeed& seed1, const TSeed& seed2)
-    {
-        return beginPositionV(seed1) < beginPositionV(seed2);
-    }
-} seedReferencePositionComparer;
-
-template<typename TSeed>
-size_t GetSeedNumBases(const TSeed seed)
-{
-    return endPositionV(seed) - beginPositionV(seed);
-}
-
-template<typename TSeed>
-size_t SumSeedChainBases(const vector<TSeed>& chain)
-{
-    size_t sum = 0;
-    for (size_t i = 0; i < length(chain); ++i)
-    {
-        sum += GetSeedNumBases(chain[i]);
-    }
-    return sum;
-}
-
-struct SeedChainNumBasesFunctor {
-    bool operator()(const vector<TSeed>& chain1, const vector<TSeed>& chain2)
-    {
-        return SumSeedChainBases(chain1) > SumSeedChainBases(chain2);
-    }
-} seedChainNumBasesComparer;
 
 template<typename TSeed>
 void SeedSetsToSeedVectors(vector<TSeedSet>& sets,
@@ -95,17 +65,6 @@ int AdvanceIndexToIntervalEnd(const vector<TSeed>& seeds,
     return 0;
 }
 
-template<typename TSeed>
-size_t SumIntervalSeedlengths(const vector<TSeed>& seeds, 
-                              const size_t& start,
-                              const size_t& end)
-{
-    size_t sum = 0;
-
-    return sum;
-    
-
-}
 
 template<typename TSeed>
 int GetSeedIntervals(vector<SeedInterval>& intervals,
@@ -164,17 +123,6 @@ int SeedSetFromSeedInterval(TSeedSet& seedSet,
     return 0;
 }
 
-template<typename TSeed>
-int GetSeedChainStartPos(const vector<TSeed>& chain)
-{
-    return beginPositionV( chain[0] );
-}
-
-template<typename TSeed>
-int GetSeedChainEndPos(const vector<TSeed>& chain)
-{
-    return endPositionV( chain[chain.size()-1] );
-}
 
 template<typename TSeed>
 int SeedIntervalsToSeedChains(vector<vector<TSeed>>& chains,

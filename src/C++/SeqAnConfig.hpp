@@ -7,7 +7,6 @@
 #include <seqan/seeds.h>
 #include <seqan/sequence.h>
 
-using namespace std;
 using namespace seqan;
 
 // Declare our Seed Config and associated Seed type
@@ -27,6 +26,7 @@ struct SeedConfig
 typedef Seed<Simple> TSeed;
 typedef SeedSet<Simple> TSeedSet;
 typedef String<TSeed> TSeedString;
+typedef std::vector<TSeed> TSeedChain;
 
 // Config for finding alignment seeds with suffix arrays / QGrams 
 //

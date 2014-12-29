@@ -81,26 +81,26 @@ int main(int argc, char const ** argv) {
                                   seedIntervals);
         std::cout << "Finished conversion to seed chains" << std::endl;
 
-        for (size_t i = 0; i < querySeedChains.size(); ++i) {
-            auto temp = querySeedChains[i];
-            std::cout << "Idx #" << i
-                      << " L " << temp.size()
-                      << " Pos "<< GetSeedChainStartPos(temp)
-                      << " -- " << GetSeedChainEndPos(temp) << std::endl;
-        }
+        //for (size_t i = 0; i < querySeedChains.size(); ++i) {
+        //    auto temp = querySeedChains[i];
+        //    std::cout << "Idx #" << i
+        //              << " L " << temp.size()
+        //              << " Pos "<< GetSeedChainStartPos(temp)
+        //              << " -- " << GetSeedChainEndPos(temp) << std::endl;
+        //}
 
-        // vector<int> seedSetOrder = GetSeedSetOrder(querySeedHits);
-        // int maxAligns = std::min((int)seedSetOrder.size(), nCandidates);
-        // for (size_t i = 0; i < maxAligns; ++i)
-        // {
-        // Chain the initial Kmer hits into an alignment
+        //int maxAligns = std::min((int)querySeedChains.size(), params.nCandidates);
+        //for (size_t i = 0; i < maxAligns; ++i)
+        //{
+            // Chain the initial Kmer hits into an alignment
         //    int seedSetIdx = seedSetOrder[i];
-        //    auto align = SeedsToAlignment(idxAndRecord.second.Seq,
+        //    auto align = SeedsToAlignment(record->Seq,
         //                                  refSet.Sequences()[seedSetIdx],
         //                                  querySeedHits[seedSetIdx],
         //                                  scoringScheme);
         //    std::cout << align << std::endl;
-        // }
+        //}
+
         // Empty the seedHits variable before the next iteration
         querySeedHits.clear();
     }
