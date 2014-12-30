@@ -27,6 +27,7 @@ typedef Seed<Simple> TSeed;
 typedef SeedSet<Simple> TSeedSet;
 typedef String<TSeed> TSeedString;
 typedef std::vector<TSeed> TSeedChain;
+typedef Align<Dna5String, ArrayGaps> TAlign;
 
 // Config for finding alignment seeds with suffix arrays / QGrams 
 //

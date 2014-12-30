@@ -16,6 +16,7 @@
 #include "ReferenceSet.hpp"
 #include "SequenceReader.hpp"
 #include "SparseAlignment.hpp"
+#include "SparseAlignment2.cpp"
 #include "SeedIntervals.cpp"
 
 using namespace seqan;
@@ -79,27 +80,24 @@ int main(int argc, char const ** argv) {
                                   seedIntervals);
         std::cout << "Finished conversion to seed chains" << std::endl;
 
-        for (size_t i = 0; i < querySeedChains.size(); ++i) {
-            auto temp = querySeedChains[i];
-            vector<TSeed>* chain = &temp.second;
-            std::cout << "Idx #" << i
-                      << " Ref #" << temp.first
-                      << " L " << chain->size()
-                      << " Pos "<< GetSeedChainStartPos(*chain)
-                      << " -- " << GetSeedChainEndPos(*chain) << std::endl;
-        }
-
-        //int maxAligns = std::min((int)querySeedChains.size(), params.nCandidates);
-        //for (size_t i = 0; i < maxAligns; ++i)
-        //{
-            // Chain the initial Kmer hits into an alignment
-        //    int seedSetIdx = seedSetOrder[i];
-        //    auto align = SeedsToAlignment(record->Seq,
-        //                                  refSet.Sequences()[seedSetIdx],
-        //                                  querySeedHits[seedSetIdx],
-        //                                  scoringScheme);
-        //    std::cout << align << std::endl;
+        //for (size_t i = 0; i < querySeedChains.size(); ++i) {
+        //    auto temp = querySeedChains[i];
+        //    vector<TSeed>* chain = &temp.second;
+        //    std::cout << "Idx #" << i
+        //              << " Ref #" << temp.first
+        //              << " L " << chain->size()
+        //              << " Pos "<< GetSeedChainStartPos(*chain)
+        //              << " -- " << GetSeedChainEndPos(*chain) << std::endl;
         //}
+
+        int maxAligns = std::min((int)querySeedChains.size(), params.nCandidates);
+        // Chain the initial Kmer hits into an alignment
+        auto alignments = RefChainsToAlignments(record->Seq,
+                                                refSet,
+                                                querySeedChains,
+                                                scoringScheme,
+                                                maxAligns,
+                                                60.0);
 
         // Empty the seedHits variable before the next iteration
         querySeedHits.clear();

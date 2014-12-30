@@ -15,10 +15,11 @@
 #include <seqan/sequence.h>
 
 #include "config/SeqAnConfig.hpp"
+#include "config/Types.hpp"
+#include "ReferenceSet.hpp"
 
 using namespace std;
 using namespace seqan;
-
 
 // Find seeds using the index
 template<typename TConfig = FindSeedsConfig<>>
@@ -99,6 +100,7 @@ float ScoreSeedChain(const TSeedString& chain)
 
     return score;
 }
+
 
 //TODO: Why isn't the global align config working?
 template<typename TAlignConfig = GlobalAlignConfig>
