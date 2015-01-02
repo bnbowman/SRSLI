@@ -23,6 +23,8 @@ class SrsliParameters {
 
         // Hidden and fixed parameters
         float maxNetIndelRate;
+        float minAccuracy;
+        int maxChainBuffer;
         int parseOk;
 
     private:
@@ -46,6 +48,8 @@ class SrsliParameters {
 
         // Set hiddeen parameters
         maxNetIndelRate = 1.30;
+        minAccuracy = 60.0;
+        maxChainBuffer = 50;
     }
 
     seqan::ArgumentParser SetupParser()
