@@ -26,6 +26,7 @@ class SrsliParameters {
         float minAccuracy;
         int maxChainBuffer;
         int parseOk;
+        int alignmentAnchor;
 
     private:
         seqan::ArgumentParser parser;
@@ -49,7 +50,8 @@ class SrsliParameters {
         // Set hiddeen parameters
         maxNetIndelRate = 1.30;
         minAccuracy = 60.0;
-        maxChainBuffer = 50;
+        maxChainBuffer = 25;
+        alignmentAnchor = 6;
     }
 
     seqan::ArgumentParser SetupParser()

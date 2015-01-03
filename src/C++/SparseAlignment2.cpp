@@ -44,8 +44,8 @@ float AlignmentAccuracy(const Align<Dna5String, ArrayGaps>& alignment,
     size_t insertions = 0;
     size_t deletions = 0;
 
-    auto query = row(alignment, queryIdx);
-    auto reference = row(alignment, refIdx);
+    auto &query = row(alignment, queryIdx);
+    auto &reference = row(alignment, refIdx);
 
     for (size_t i = 0; i < length(reference); ++i)
     {
@@ -65,11 +65,6 @@ float AlignmentAccuracy(const Align<Dna5String, ArrayGaps>& alignment,
             mismatches += 1;
         }
     }
-    //std::cout << "Match: "     << matches << std::endl;
-    //std::cout << "Mismatch: "  << mismatches << std::endl;
-    //std::cout << "Insertion: " << insertions << std::endl;
-    //std::cout << "Deletion: "  << deletions << std::endl;
-    //std::cout << "Total: "     << total << std::endl;
     return 100.0*(float)matches/(float)total;
 }
 
@@ -125,6 +120,55 @@ Segment<const Dna5String> RegionToInfix(const Dna5String& seq,
     return infix(seq, startPos, endPos);
 }
 
+void ClipAlignment(TAlign& alignment,
+                   const int minAlignmentAnchorSize)
+{
+    int startAnchorLength = 0;
+    int endAnchorLength = 0;
+    int clipStart = -1;
+    int clipEnd   = -1;
+
+    auto &query     = row(alignment, 0);
+    auto &reference = row(alignment, 1);
+
+    // Find the first string of Anchor-length matches in the alignment
+    for (size_t i = 0; i < length(reference); ++i)
+    {
+        if (reference[i] != '-' && reference[i] == query[i]) {
+            if (startAnchorLength == 0)
+                clipStart = i;
+            ++startAnchorLength;
+        } else {
+            startAnchorLength = 0;
+        }
+        
+        if (startAnchorLength >= minAlignmentAnchorSize)
+            break;
+    }
+
+    // Find the last string of Anchor-length matches in the alignment
+    for (size_t i = length(reference)-1; i > 0; --i)
+    {
+        char refBase = reference[i];
+        if (refBase != '-' && refBase == query[i]) {
+            if (endAnchorLength == 0)
+                clipEnd = i+1;
+            ++endAnchorLength;
+        } else {
+            endAnchorLength = 0;
+        }
+        
+        if (endAnchorLength >= minAlignmentAnchorSize)
+            break;
+    }
+
+    // Set the identified clipping positions
+    setClippedBeginPosition(query,     clipStart);
+    setClippedEndPosition(query,       clipEnd);
+    setClippedBeginPosition(reference, clipStart);
+    setClippedEndPosition(reference,   clipEnd);
+}
+
 //TODO: Why isn't the global align config working?
 template<typename TAlignConfig = GlobalAlignConfig>
 vector<TAlign> RefChainsToAlignments(const Dna5String& querySeq, 
@@ -133,7 +177,8 @@ vector<TAlign> RefChainsToAlignments(const Dna5String& querySeq,
                                      const Score<long, Simple>& scoring,
                                      const size_t maxAligns,
                                      const float minAccuracy,
-                                     const int maxChainBuffer)
+                                     const int maxChainBuffer,
+                                     const int alignmentAnchorSize)
 {
     vector<TAlign> alignments;
     ReferencedSeedChain refChain;
@@ -173,20 +218,16 @@ vector<TAlign> RefChainsToAlignments(const Dna5String& querySeq,
         AlignConfig<false, false, false, false> globalConfig;
         long alnScore = bandedChainAlignment(alignment, shiftedString, scoring, globalConfig);
         std::cout << "Finishing alignment of sequences" << std::endl;
-        alignments.push_back(alignment);
 
-        unsigned cBeginPos = clippedBeginPosition(row(alignment, 0));
-        unsigned cEndPos = clippedEndPosition(row(alignment, 0)) - 1;
-        std::cout << "Aligns Seq1[" << cBeginPos << ":" << cEndPos << "]";
-        std::cout << " and Seq2[" << cBeginPos << ":" << cEndPos << "]" << std::endl << std::endl;
-        std::cout << length(row(alignment, 0)) << std::endl;
+        std::cout << "Clipping alignment to the core matching region" << std::endl;
+        ClipAlignment(alignment, alignmentAnchorSize);
+        std::cout << "Finishing clipping alignment" << std::endl;
 
         float accuracy = AlignmentAccuracy(alignment, 0, 1);
         std::cout << "Accuracy: " << accuracy << std::endl;
 
         if (accuracy > minAccuracy) {
-            std::cout << "Score = " << alnScore << std::endl;
-            std::cout << alignment;
+            std::cout << alignment << std::endl;
             alignments.push_back(alignment);
         } else {
             break;

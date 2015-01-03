@@ -98,7 +98,8 @@ int main(int argc, char const ** argv) {
                                                 scoringScheme,
                                                 maxAligns,
                                                 params.minAccuracy,
-                                                params.maxChainBuffer);
+                                                params.maxChainBuffer,
+                                                params.alignmentAnchor);
 
         // Empty the seedHits variable before the next iteration
         querySeedHits.clear();
