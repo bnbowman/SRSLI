@@ -23,11 +23,19 @@ struct SeedConfig
 //typedef SeedSet<SeedConfig> TSeedSet;
 //typedef String<SeedConfig> TSeedString;
 
+// Sequence-related types
+typedef Dna5String TDna;
+typedef Segment<const TDna> TSegment;
+
+// Seed-related types
 typedef Seed<Simple> TSeed;
 typedef SeedSet<Simple> TSeedSet;
 typedef String<TSeed> TSeedString;
 typedef std::vector<TSeed> TSeedChain;
+
+// Alignment-related types
 typedef Align<Dna5String, ArrayGaps> TAlign;
+typedef Row<TAlign>::Type TRow;
 
 // Config for finding alignment seeds with suffix arrays / QGrams 
 //

@@ -91,7 +91,7 @@ class SrsliParameters {
 
         // Set default values
         setDefaultValue(parser, "minScore",    "1000");
-        setDefaultValue(parser, "nCandidates", "1");
+        setDefaultValue(parser, "nCandidates", "5");
         setDefaultValue(parser, "seedSize",    "12");
         setDefaultValue(parser, "verbosity",   "1");
             

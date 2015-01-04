@@ -12,7 +12,9 @@
 #include "config/SeqAnConfig.hpp"
 #include "config/Types.hpp"
 #include "utils/SeedString.cpp"
+#include "utils/Align.cpp"
 #include "ReferenceSet.hpp"
+#include "AlignmentRecord.cpp"
 
 using namespace seqan;
 using namespace srsli;
@@ -34,40 +36,6 @@ Segment<const Dna5String> SeedChainToInfix(const Dna5String& seq,
     return infix(seq, 0, endPos);
 }
 
-float AlignmentAccuracy(const Align<Dna5String, ArrayGaps>& alignment,
-                        const size_t queryIdx,
-                        const size_t refIdx)
-{
-    size_t total = 0;
-    size_t matches = 0;
-    size_t mismatches = 0;
-    size_t insertions = 0;
-    size_t deletions = 0;
-
-    auto &query = row(alignment, queryIdx);
-    auto &reference = row(alignment, refIdx);
-
-    for (size_t i = 0; i < length(reference); ++i)
-    {
-        char refBase = query[i];
-        char queryBase = reference[i];
-        if (refBase == '-' && queryBase != '-') {
-            total += 1;
-            insertions += 1;
-        } else if (refBase == queryBase) {
-            total += 1;
-            matches += 1;
-        } else if (queryBase == '-') {
-            total += 1;
-            deletions += 1;
-        } else {
-            total += 1;
-            mismatches += 1;
-        }
-    }
-    return 100.0*(float)matches/(float)total;
-}
-
 struct region_t {
     int queryStart;
     int queryEnd;
@@ -79,13 +47,26 @@ struct region_t {
 region_t ChoseAlignmentRegion(const String<TSeed>& chain,
                               const int queryLength,
                               const int refLength,
-                              const int maxChainBuffer)
+                              const int maxChainBuffer,
+                              const float netMaxIndels = 1.3)
 {
     region_t alignmentRegion;
-    alignmentRegion.queryStart = std::max((int)beginPositionH(chain) - maxChainBuffer, 0);
-    alignmentRegion.queryEnd   = std::min((int)endPositionH(chain)   + maxChainBuffer, queryLength);
-    alignmentRegion.refStart   = std::max((int)beginPositionV(chain) - maxChainBuffer, 0);
-    alignmentRegion.refEnd     = std::min((int)endPositionV(chain)   + maxChainBuffer, refLength);
+    int querySeedStart = beginPositionH(chain);
+    int querySeedEnd   = endPositionH(chain);
+
+    // First find the Query Start and end positions, given some maximum buffer size
+    alignmentRegion.queryStart = std::max(querySeedStart - maxChainBuffer, 0);
+    alignmentRegion.queryEnd   = std::min(querySeedEnd   + maxChainBuffer, queryLength);
+    
+    // Second, decide based on the Query buffer used how much sequence to take from the Reference
+    int queryStartBuffer = (querySeedStart - alignmentRegion.queryStart) * netMaxIndels;
+    int queryEndBuffer   = (alignmentRegion.queryEnd - querySeedEnd) * netMaxIndels;
+    
+    // Perform the same calculation as the for the query for the reference,
+    //    using the new buffer sizes
+    alignmentRegion.refStart   = std::max((int)beginPositionV(chain) - queryStartBuffer, 0);
+    alignmentRegion.refEnd     = std::min((int)endPositionV(chain)   + queryEndBuffer, refLength);
+
     return alignmentRegion;
 }
 
@@ -203,32 +184,34 @@ vector<TAlign> RefChainsToAlignments(const Dna5String& querySeq,
                                                         length(refSeq), 
                                                         maxChainBuffer);
         String<TSeed> shiftedString = ShiftSeedString(seedString, alignmentRegion);
-        auto queryInfix = RegionToInfix(querySeq, alignmentRegion, 'H');
-        auto refInfix   = RegionToInfix(refSeq, alignmentRegion, 'V');
+        TSegment queryInfix = RegionToInfix(querySeq, alignmentRegion, 'H');
+        TSegment refInfix   = RegionToInfix(refSeq, alignmentRegion, 'V');
 
-        Align<Dna5String, ArrayGaps> alignment;
-        resize(rows(alignment), 2);
-        std::cout << "Starting creation of infix sequences" << std::endl;
-        assignSource(row(alignment, 0), queryInfix);
-        std::cout << "Finished query infix sequences" << std::endl;
-        assignSource(row(alignment, 1), refInfix);
-        std::cout << "Finishing creation of infix sequences" << std::endl;
+        // Create an AlignmentRecord from the sequence infixes
+        AlignmentRecord alnRec(queryInfix, refInfix);
 
         std::cout << "Starting alignment of sequences" << std::endl;
-        AlignConfig<false, false, false, false> globalConfig;
-        long alnScore = bandedChainAlignment(alignment, shiftedString, scoring, globalConfig);
+        AlignConfig<false, false, true, true> globalConfig;
+        long alnScore = bandedChainAlignment(alnRec.Alignment, shiftedString, scoring, globalConfig);
         std::cout << "Finishing alignment of sequences" << std::endl;
 
         std::cout << "Clipping alignment to the core matching region" << std::endl;
-        ClipAlignment(alignment, alignmentAnchorSize);
+        ClipAlignment(alnRec.Alignment, alignmentAnchorSize);
+        std::cout << alnRec.Alignment << std::endl;
         std::cout << "Finishing clipping alignment" << std::endl;
+        std::cout << alnRec.Accuracy() << std::endl;
 
-        float accuracy = AlignmentAccuracy(alignment, 0, 1);
+        float accuracy = AlignmentAccuracy(alnRec.Alignment, 0, 1);
         std::cout << "Accuracy: " << accuracy << std::endl;
 
         if (accuracy > minAccuracy) {
-            std::cout << alignment << std::endl;
-            alignments.push_back(alignment);
+            //auto& row0 = row(alignment, 0);
+            //auto& row1 = row(alignment, 1);
+            //std::cout << CountUnalignedStartBases(row0) << std::endl;
+            //std::cout << CountUnalignedStartBases(row1) << std::endl;
+            //std::cout << CountUnalignedEndBases(row0) << std::endl;
+            //std::cout << CountUnalignedEndBases(row1) << std::endl;
+            //alignments.push_back(alignment);
         } else {
             break;
         }
