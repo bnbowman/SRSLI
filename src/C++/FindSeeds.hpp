@@ -18,12 +18,11 @@
 #include "config/Types.hpp"
 #include "ReferenceSet.hpp"
 
-using namespace std;
 using namespace seqan;
 
 // Find seeds using the index
 template<typename TConfig = FindSeedsConfig<>>
-void FindSeeds(vector<TSeedSet>& seeds,
+void FindSeeds(std::vector<TSeedSet>& seeds,
                Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
                const size_t& refSize,
                const Dna5String& query)
@@ -68,35 +67,4 @@ void FindSeeds(vector<TSeedSet>& seeds,
             }
         }
     }
-}
-
-
-template<typename TAlignConfig = GlobalAlignConfig>
-Segment<const Dna5String> SeedChainToInfix(const Dna5String& seq,
-                                           const String<Seed<Simple>>& chain,
-                                           char axis)
-{
-    int startPos, endPos;
-    if (axis == 'H')
-    {
-       startPos = beginPositionH(front(chain));
-       endPos   = endPositionH(back(chain));
-    } else {
-       startPos = beginPositionV(front(chain));
-       endPos   = endPositionV(back(chain));
-    }
-    std::cout << "S: " << startPos << " E: " << endPos << std::endl;
-    return infix(seq, 0, endPos);
-}
-
-
-//Stuff
-template<typename TConfig = GlobalAlignConfig>
-float ScoreSeedChain(const TSeedString& chain)
-{
-    float score = 0.0;
-    for (unsigned i = 0; i < length(chain); ++i)
-        score += seqan::score(chain[i]);
-
-    return score;
 }

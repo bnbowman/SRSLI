@@ -13,8 +13,8 @@ using namespace seqan;
 using namespace srsli;
 
 template<typename TSeed>
-void SeedSetsToSeedVectors(vector<TSeedSet>& sets,
-                           vector<vector<TSeed>>& vectors)
+void SeedSetsToSeedVectors(std::vector<TSeedSet>& sets,
+                           std::vector<std::vector<TSeed>>& vectors)
 {
     typedef seqan::Iterator<TSeedSet>::Type TIter;
 
@@ -22,7 +22,7 @@ void SeedSetsToSeedVectors(vector<TSeedSet>& sets,
     for (size_t i = 0; i < sets.size(); ++i)
     {
         // Initialize destination Seed vector to the appropriate size
-        vectors[i] = vector<TSeed>( length(sets[i]) );
+        vectors[i] = std::vector<TSeed>( length(sets[i]) );
 
         // Iterate over each seed, adding it to the vector
         size_t j = 0;
@@ -39,7 +39,7 @@ void SeedSetsToSeedVectors(vector<TSeedSet>& sets,
 
 
 template<typename TSeed>
-int AdvanceIndexToIntervalEnd(const vector<TSeed>& seeds,
+int AdvanceIndexToIntervalEnd(const std::vector<TSeed>& seeds,
                               const size_t& nSeeds,
                               const size_t& maxIntervalSize,
                               const size_t& start,
@@ -63,8 +63,8 @@ int AdvanceIndexToIntervalEnd(const vector<TSeed>& seeds,
 
 
 template<typename TSeed>
-int GetSeedIntervals(vector<SeedInterval>& intervals,
-                     const vector<vector<TSeed>>& seedHits,
+int GetSeedIntervals(std::vector<SeedInterval>& intervals,
+                     const std::vector<std::vector<TSeed>>& seedHits,
                      const size_t& maxIntervalSize)
 {
     // Iterate over each SeedSet, looking for intervals in each
@@ -104,7 +104,7 @@ int GetSeedIntervals(vector<SeedInterval>& intervals,
 template<typename TSeed>
 int SeedSetFromSeedInterval(TSeedSet& seedSet,
                             const SeedInterval& interval,
-                            const vector<TSeed>& seeds)
+                            const std::vector<TSeed>& seeds)
 {
     size_t start = std::get<1>(interval);
     size_t end = std::get<2>(interval);
@@ -121,15 +121,15 @@ int SeedSetFromSeedInterval(TSeedSet& seedSet,
 
 
 template<typename TSeed>
-int SeedIntervalsToSeedChains(vector<ReferencedSeedChain>& chains,
-                              const vector<vector<TSeed>>& seedVecs,
-                              const vector<SeedInterval>& intervals)
+int SeedIntervalsToSeedChains(std::vector<ReferencedSeedChain>& chains,
+                              const std::vector<std::vector<TSeed>>& seedVecs,
+                              const std::vector<SeedInterval>& intervals)
 {
     size_t minSeedChainBases = 30;
 
     // Allocate a seedSet and chain for intermediate use
     TSeedSet seedSet;
-    vector<TSeed> chain;
+    std::vector<TSeed> chain;
     ReferencedSeedChain refChain;
     size_t prevIdx;
     int endPos, prevEndPos;

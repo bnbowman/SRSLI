@@ -65,10 +65,10 @@ String<TSeed> ShiftSeedString(const String<TSeed>& string,
 
 //TODO: Why isn't the global align config working?
 template<typename TAlignConfig = GlobalAlignConfig>
-int RefChainsToAlignments(vector<AlignmentRecord>& results,
+int RefChainsToAlignments(std::vector<AlignmentRecord>& results,
                           const Dna5String& querySeq, 
                           const ReferenceSet& refSet,
-                          const vector<ReferencedSeedChain>& refChains,
+                          const std::vector<ReferencedSeedChain>& refChains,
                           const Score<long, Simple>& scoring,
                           const size_t maxAligns,
                           const float minAccuracy,

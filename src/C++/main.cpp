@@ -48,12 +48,12 @@ int main(int argc, char const ** argv) {
     std::pair<size_t, SequenceRecord> idxAndRecord;
 
     // Define the variable where the initial hits for the query will be stored
-    vector<TSeedSet> querySeedSets(2, TSeedSet());
-    vector<vector<TSeed>> querySeedHits(2);
-    vector<ReferencedSeedChain> querySeedChains;
+    std::vector<TSeedSet> querySeedSets(2, TSeedSet());
+    std::vector<std::vector<TSeed>> querySeedHits(2);
+    std::vector<ReferencedSeedChain> querySeedChains;
 
     // Initialize the vector that will get the alignment results
-    vector<AlignmentRecord> results;
+    std::vector<AlignmentRecord> results;
 
     for ( ; seqReader.GetNext(idxAndRecord) ; ) {
         // Display current query
@@ -76,7 +76,7 @@ int main(int argc, char const ** argv) {
         std::cout << "Finished sorting seeds" << std::endl;
 
         std::cout << "Selecting seed intervals" << std::endl;
-        vector<SeedInterval> seedIntervals;
+        std::vector<SeedInterval> seedIntervals;
         GetSeedIntervals(seedIntervals, querySeedHits, maxIntervalLength);
         std::cout << "Finished selecting seed intervals" << std::endl;
 
