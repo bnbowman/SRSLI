@@ -9,7 +9,7 @@
 // Utility Functions
 size_t SumReferencedSeedChainBases(const ReferencedSeedChain& refChain)
 {
-    const TSeedChain* chain = &refChain.second;
+    const TSeedChain* chain = &refChain.chain;
     size_t sum = 0;
     for (size_t i = 0; i < length(*chain); ++i)
     {

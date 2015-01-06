@@ -13,35 +13,13 @@
 #include "config/Types.hpp"
 #include "utils/SeedString.cpp"
 #include "utils/Align.cpp"
+#include "utils/RegionT.cpp"
 #include "ReferenceSet.hpp"
 #include "AlignmentRecord.cpp"
 
 using namespace seqan;
 using namespace srsli;
 
-
-Segment<const Dna5String> SeedChainToInfix(const Dna5String& seq,
-                                           const vector<TSeed>& chain,
-                                           char axis)
-{
-    int startPos, endPos;
-    if (axis == 'H')
-    {
-       startPos = beginPositionH(front(chain));
-       endPos   = endPositionH(back(chain));
-    } else {
-       startPos = beginPositionV(front(chain));
-       endPos   = endPositionV(back(chain));
-    }
-    return infix(seq, 0, endPos);
-}
-
-struct region_t {
-    int queryStart;
-    int queryEnd;
-    int refStart;
-    int refEnd;
-};
 
 // Based on the supplied chain and buffer size, decide the regions of the sequences to align
 region_t ChoseAlignmentRegion(const String<TSeed>& chain,
@@ -85,93 +63,31 @@ String<TSeed> ShiftSeedString(const String<TSeed>& string,
     return output;
 }
 
-Segment<const Dna5String> RegionToInfix(const Dna5String& seq,
-                                        region_t alignmentRegion,
-                                        char axis)
-{
-    int startPos, endPos;
-    if (axis == 'H')
-    {
-       startPos = alignmentRegion.queryStart;
-       endPos   = alignmentRegion.queryEnd;
-    } else {
-       startPos = alignmentRegion.refStart;
-       endPos   = alignmentRegion.refEnd;
-    }
-    return infix(seq, startPos, endPos);
-}
-
-void ClipAlignment(TAlign& alignment,
-                   const int minAlignmentAnchorSize)
-{
-    int startAnchorLength = 0;
-    int endAnchorLength = 0;
-    int clipStart = -1;
-    int clipEnd   = -1;
-
-    auto &query     = row(alignment, 0);
-    auto &reference = row(alignment, 1);
-
-    // Find the first string of Anchor-length matches in the alignment
-    for (size_t i = 0; i < length(reference); ++i)
-    {
-        if (reference[i] != '-' && reference[i] == query[i]) {
-            if (startAnchorLength == 0)
-                clipStart = i;
-            ++startAnchorLength;
-        } else {
-            startAnchorLength = 0;
-        }
-        
-        if (startAnchorLength >= minAlignmentAnchorSize)
-            break;
-    }
-
-    // Find the last string of Anchor-length matches in the alignment
-    for (size_t i = length(reference)-1; i > 0; --i)
-    {
-        char refBase = reference[i];
-        if (refBase != '-' && refBase == query[i]) {
-            if (endAnchorLength == 0)
-                clipEnd = i+1;
-            ++endAnchorLength;
-        } else {
-            endAnchorLength = 0;
-        }
-        
-        if (endAnchorLength >= minAlignmentAnchorSize)
-            break;
-    }
-
-    // Set the identified clipping positions
-    setClippedBeginPosition(query,     clipStart);
-    setClippedEndPosition(query,       clipEnd);
-    setClippedBeginPosition(reference, clipStart);
-    setClippedEndPosition(reference,   clipEnd);
-}
-
 //TODO: Why isn't the global align config working?
 template<typename TAlignConfig = GlobalAlignConfig>
-vector<TAlign> RefChainsToAlignments(const Dna5String& querySeq, 
-                                     const ReferenceSet& refSet,
-                                     const vector<ReferencedSeedChain>& refChains,
-                                     const Score<long, Simple>& scoring,
-                                     const size_t maxAligns,
-                                     const float minAccuracy,
-                                     const int maxChainBuffer,
-                                     const int alignmentAnchorSize)
+int RefChainsToAlignments(vector<AlignmentRecord>& results,
+                          const Dna5String& querySeq, 
+                          const ReferenceSet& refSet,
+                          const vector<ReferencedSeedChain>& refChains,
+                          const Score<long, Simple>& scoring,
+                          const size_t maxAligns,
+                          const float minAccuracy,
+                          const int maxChainBuffer,
+                          const int alignmentAnchorSize)
 {
-    vector<TAlign> alignments;
+    AlignConfig<false, false, true, true> globalConfig;
     ReferencedSeedChain refChain;
-    Dna5String refSeq;
+    ReferenceRecord refRec;
+    TDna* refSeqPtr;
     TSeedChain* seedChain;
 
     for (size_t i = 0; i < maxAligns; ++i)
     {
         refChain = refChains[i];
-        size_t refIdx = std::get<0>(refChain);
-        seedChain = &std::get<1>(refChain);
-        refSeq = refSet.Sequences()[refIdx];
+        size_t refIdx = refChain.referenceIndex;
+        seedChain = &refChain.chain;
+        refRec = refSet.Records[refIdx];
+        refSeqPtr = refRec.seq;
 
         String<TSeed> seedString;
         for (size_t j = 0; j < seedChain->size(); ++j)
@@ -181,41 +97,23 @@ vector<TAlign> RefChainsToAlignments(const Dna5String& querySeq,
 
         region_t alignmentRegion = ChoseAlignmentRegion(seedString, 
                                                         length(querySeq), 
-                                                        length(refSeq), 
+                                                        length(*refSeqPtr), 
                                                         maxChainBuffer);
         String<TSeed> shiftedString = ShiftSeedString(seedString, alignmentRegion);
-        TSegment queryInfix = RegionToInfix(querySeq, alignmentRegion, 'H');
-        TSegment refInfix   = RegionToInfix(refSeq, alignmentRegion, 'V');
 
-        // Create an AlignmentRecord from the sequence infixes
-        AlignmentRecord alnRec(queryInfix, refInfix);
+        // Create an AlignmentRecord from the sequences and the selected region
+        AlignmentRecord alnRec(querySeq, *refSeqPtr, alignmentRegion);
 
         std::cout << "Starting alignment of sequences" << std::endl;
-        AlignConfig<false, false, true, true> globalConfig;
-        long alnScore = bandedChainAlignment(alnRec.Alignment, shiftedString, scoring, globalConfig);
+        alnRec.Score = bandedChainAlignment(alnRec.Alignment, shiftedString, scoring, globalConfig);
         std::cout << "Finishing alignment of sequences" << std::endl;
+        std::cout << "Accuracy: " << alnRec.Accuracy() << std::endl;
 
-        std::cout << "Clipping alignment to the core matching region" << std::endl;
-        ClipAlignment(alnRec.Alignment, alignmentAnchorSize);
-        std::cout << alnRec.Alignment << std::endl;
-        std::cout << "Finishing clipping alignment" << std::endl;
-        std::cout << alnRec.Accuracy() << std::endl;
-
-        float accuracy = AlignmentAccuracy(alnRec.Alignment, 0, 1);
-        std::cout << "Accuracy: " << accuracy << std::endl;
-
-        if (accuracy > minAccuracy) {
-            //auto& row0 = row(alignment, 0);
-            //auto& row1 = row(alignment, 1);
-            //std::cout << CountUnalignedStartBases(row0) << std::endl;
-            //std::cout << CountUnalignedStartBases(row1) << std::endl;
-            //std::cout << CountUnalignedEndBases(row0) << std::endl;
-            //std::cout << CountUnalignedEndBases(row1) << std::endl;
-            //alignments.push_back(alignment);
+        if (alnRec.Accuracy() > minAccuracy) {
+            results.push_back(alnRec);
         } else {
             break;
         }
     }
-
-    return alignments;
+    return 0;
 }

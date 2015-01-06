@@ -11,6 +11,39 @@ using namespace seqan;
 //   for a hit
 typedef std::tuple<size_t, size_t, size_t> SeedInterval;
 
-// This pair represents an ordered vector of seeds and the index
+// This struct represents an ordered vector of seeds and the index
 //   of the reference sequence from which it came
-typedef std::pair<size_t, TSeedChain> ReferencedSeedChain;
+struct ReferencedSeedChain {
+    size_t referenceIndex;
+    TSeedChain chain;
+
+    ReferencedSeedChain() {}
+
+    ReferencedSeedChain(size_t i, TSeedChain c)
+        : referenceIndex( i )
+        , chain( c )
+    {}
+};
+
+// This struct represents the Start and End positions within a
+//   pair of sequences to be aligned
+struct region_t {
+    int queryStart;
+    int queryEnd;
+    int refStart;
+    int refEnd;
+};
+
+struct ReferenceRecord {
+    CharString id;
+    TDna* seq;
+    int orientation;
+
+    ReferenceRecord() {}
+
+    ReferenceRecord(CharString i, TDna* s, int o)
+        : id( i )
+        , seq( s )
+        , orientation( o )
+    {}
+};

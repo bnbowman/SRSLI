@@ -4,6 +4,55 @@
 
 #include "../config/SeqAnConfig.hpp"
 
+void ClipAlignment(TAlign& alignment,
+                   const int minAlignmentAnchorSize = 6)
+{
+    int startAnchorLength = 0;
+    int endAnchorLength = 0;
+    int clipStart = -1;
+    int clipEnd   = -1;
+
+    auto &query     = row(alignment, 0);
+    auto &reference = row(alignment, 1);
+
+    // Find the first string of Anchor-length matches in the alignment
+    for (size_t i = 0; i < length(reference); ++i)
+    {
+        if (reference[i] != '-' && reference[i] == query[i]) {
+            if (startAnchorLength == 0)
+                clipStart = i;
+            ++startAnchorLength;
+        } else {
+            startAnchorLength = 0;
+        }
+        
+        if (startAnchorLength >= minAlignmentAnchorSize)
+            break;
+    }
+
+    // Find the last string of Anchor-length matches in the alignment
+    for (size_t i = length(reference)-1; i > 0; --i)
+    {
+        char refBase = reference[i];
+        if (refBase != '-' && refBase == query[i]) {
+            if (endAnchorLength == 0)
+                clipEnd = i+1;
+            ++endAnchorLength;
+        } else {
+            endAnchorLength = 0;
+        }
+        
+        if (endAnchorLength >= minAlignmentAnchorSize)
+            break;
+    }
+
+    // Set the identified clipping positions
+    setClippedBeginPosition(query,     clipStart);
+    setClippedEndPosition(query,       clipEnd);
+    setClippedBeginPosition(reference, clipStart);
+    setClippedEndPosition(reference,   clipEnd);
+}
+
 float AlignmentAccuracy(const Align<Dna5String, ArrayGaps>& alignment,
                         const size_t queryIdx,
                         const size_t refIdx)

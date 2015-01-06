@@ -13,7 +13,9 @@
 
 #include "config/SeqAnConfig.hpp"
 #include "parameters/SrsliParameters.hpp"
+#include "Headers.cpp"
 #include "ReferenceSet.hpp"
+#include "AlignmentRecord.hpp"
 #include "SequenceReader.hpp"
 #include "SparseAlignment.hpp"
 #include "SparseAlignment2.cpp"
@@ -44,10 +46,14 @@ int main(int argc, char const ** argv) {
     // Create an iterator for the query sequences and a pair for it to return to
     SequenceReader seqReader = SequenceReader(params.query);
     std::pair<size_t, SequenceRecord> idxAndRecord;
+
     // Define the variable where the initial hits for the query will be stored
     vector<TSeedSet> querySeedSets(2, TSeedSet());
     vector<vector<TSeed>> querySeedHits(2);
     vector<ReferencedSeedChain> querySeedChains;
+
+    // Initialize the vector that will get the alignment results
+    vector<AlignmentRecord> results;
 
     for ( ; seqReader.GetNext(idxAndRecord) ; ) {
         // Display current query
@@ -80,28 +86,27 @@ int main(int argc, char const ** argv) {
                                   seedIntervals);
         std::cout << "Finished conversion to seed chains" << std::endl;
 
-        //for (size_t i = 0; i < querySeedChains.size(); ++i) {
-        //    auto temp = querySeedChains[i];
-        //    vector<TSeed>* chain = &temp.second;
-        //    std::cout << "Idx #" << i
-        //              << " Ref #" << temp.first
-        //              << " L " << chain->size()
-        //              << " Pos "<< GetSeedChainStartPos(*chain)
-        //              << " -- " << GetSeedChainEndPos(*chain) << std::endl;
-        //}
-
         int maxAligns = std::min((int)querySeedChains.size(), params.nCandidates);
+
         // Chain the initial Kmer hits into an alignment
-        auto alignments = RefChainsToAlignments(record->Seq,
-                                                refSet,
-                                                querySeedChains,
-                                                scoringScheme,
-                                                maxAligns,
-                                                params.minAccuracy,
-                                                params.maxChainBuffer,
-                                                params.alignmentAnchor);
+        RefChainsToAlignments(results,
+                              record->Seq,
+                              refSet,
+                              querySeedChains,
+                              scoringScheme,
+                              maxAligns,
+                              params.minAccuracy,
+                              params.maxChainBuffer,
+                              params.alignmentAnchor);
 
         // Empty the seedHits variable before the next iteration
         querySeedHits.clear();
+    }
+
+    std::cout << results.size() << std::endl;
+    std::cout << M1Header << std::endl;
+    for (size_t i = 0; i < results.size(); ++i)
+    {
+        std::cout << results[i].toM1Record() << std::endl;
     }
 }

@@ -5,6 +5,8 @@
 #include <seqan/sequence.h>
 #include <seqan/seq_io.h>
 
+#include "config/SeqAnConfig.hpp"
+#include "config/Types.hpp"
 #include "SparseAlignment.hpp"
 
 using namespace seqan;
@@ -18,20 +20,21 @@ namespace srsli {
         std::string faiFilename;
         FaiIndex faiIndex;
         StringSet<CharString> ids;
-        StringSet<Dna5String> seqs;
+        StringSet<TDna> seqs;
         size_t size;
         size_t seqCount;
 
     public:
+        vector<ReferenceRecord> Records;
         size_t Size() const;
         size_t Length() const;
         StringSet<CharString> Ids() const;
-        StringSet<Dna5String> Sequences() const;
+        StringSet<TDna> Sequences() const;
         seqan::FaiIndex FaiIndex() const;
 
     public:
         template<typename TConfig = FindSeedsConfig<>>
-        Index<StringSet<Dna5String>, typename TConfig::IndexType> 
+        Index<StringSet<TDna>, typename TConfig::IndexType> 
             GetIndex();
 
     public:

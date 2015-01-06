@@ -7,6 +7,8 @@
 #include <seqan/sequence.h>
 #include <seqan/seq_io.h>
 
+#include "config/SeqAnConfig.hpp"
+#include "config/Types.hpp"
 #include "ReferenceSet.hpp"
 
 using namespace seqan;
@@ -17,18 +19,22 @@ namespace srsli {
     {
         return size;
     }
+
     size_t ReferenceSet::Length() const
     {
         return seqCount;
     }
+
     StringSet<CharString> ReferenceSet::Ids() const
     {
         return ids;
     }
-    StringSet<Dna5String> ReferenceSet::Sequences() const
+
+    StringSet<TDna> ReferenceSet::Sequences() const
     {
         return seqs;
     }
+
     FaiIndex ReferenceSet::FaiIndex() const
     {
         return faiIndex;
@@ -60,12 +66,29 @@ namespace srsli {
 
         // Iterate over the StringSet, adding the RC sequences and sum-ing the lengths
         size = 0;
+        resize(seqs, 2*seqCount, Exact());
         for (size_t i = 0; i < seqCount; ++i)
         {
-            Dna5String rcSeq = seqs[i];
+            TDna rcSeq = seqs[i];
             reverseComplement(rcSeq);
-            appendValue(seqs, rcSeq);
-            size += 2*length(seqs[i]);  // 2x for Forward + RC
+            seqs[i+seqCount] = rcSeq;
+            size += 2*length(rcSeq);  // 2x for Forward + RC
+        }
+
+        // Iterate over the sequences, building a ReferenceRecord struct for each
+        Records.resize(2*seqCount);
+        for (size_t i = 0; i < length(seqs); ++i)
+        {
+            if (i >= seqCount)
+            {
+                Records[i].id = ids[i-seqCount];
+                Records[i].seq = &seqs[i];
+                Records[i].orientation = 1;
+            } else {
+                Records[i].id = ids[i];
+                Records[i].seq = &seqs[i];
+                Records[i].orientation = 0;
+            }
         }
     }
 }
