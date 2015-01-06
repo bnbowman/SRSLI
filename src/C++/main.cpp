@@ -17,9 +17,9 @@
 #include "ReferenceSet.hpp"
 #include "AlignmentRecord.hpp"
 #include "SequenceReader.hpp"
-#include "SparseAlignment.hpp"
-#include "SparseAlignment2.cpp"
+#include "FindSeeds.hpp"
 #include "SeedIntervals.cpp"
+#include "SparseAlignment.cpp"
 
 using namespace seqan;
 using namespace srsli;

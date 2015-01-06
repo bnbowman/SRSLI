@@ -24,9 +24,9 @@ using namespace seqan;
 // Find seeds using the index
 template<typename TConfig = FindSeedsConfig<>>
 void FindSeeds(vector<TSeedSet>& seeds,
-                Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
-                const size_t& refSize,
-                const Dna5String& query)
+               Index<StringSet<Dna5String>, typename TConfig::IndexType>& index,
+               const size_t& refSize,
+               const Dna5String& query)
 {
     typedef Shape<Dna5, typename TConfig::ShapeType> TShape;
     typedef StringSet<Dna5String> TStringSet;
@@ -99,28 +99,4 @@ float ScoreSeedChain(const TSeedString& chain)
         score += seqan::score(chain[i]);
 
     return score;
-}
-
-
-//TODO: Why isn't the global align config working?
-template<typename TAlignConfig = GlobalAlignConfig>
-Align<Dna5String, ArrayGaps> SeedsToAlignment(const Dna5String& seq1, 
-                                              const Dna5String& seq2,
-                                              const String<TSeed>& chain,
-                                              const Score<long, Simple>& scoring)
-{
-    auto infix1 = SeedChainToInfix(seq1, chain, 'H');
-    auto infix2 = SeedChainToInfix(seq2, chain, 'V');
-
-    Align<Dna5String, ArrayGaps> alignment;
-    resize(rows(alignment), 2);
-    assignSource(row(alignment, 0), infix1);
-    assignSource(row(alignment, 1), infix2);
-    AlignConfig<false, false, false, false> globalConfig;
-
-    std::cout << "Starting alignment of sequences" << std::endl;
-    long alnScore = bandedChainAlignment(alignment, chain, scoring, globalConfig);
-    std::cout << "Finishing alignment of sequences" << std::endl;
-
-    return alignment;
 }

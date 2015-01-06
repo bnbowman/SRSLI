@@ -2,12 +2,13 @@
 
 #pragma once
 
+#include <vector>
+
 #include <seqan/sequence.h>
 #include <seqan/seq_io.h>
 
 #include "config/SeqAnConfig.hpp"
 #include "config/Types.hpp"
-#include "SparseAlignment.hpp"
 
 using namespace seqan;
 
@@ -25,7 +26,7 @@ namespace srsli {
         size_t seqCount;
 
     public:
-        vector<ReferenceRecord> Records;
+        std::vector<ReferenceRecord> Records;
         size_t Size() const;
         size_t Length() const;
         StringSet<CharString> Ids() const;
