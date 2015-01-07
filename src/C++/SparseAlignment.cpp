@@ -11,7 +11,6 @@
 
 #include "config/SeqAnConfig.hpp"
 #include "config/Types.hpp"
-#include "utils/SeedString.cpp"
 #include "utils/Align.cpp"
 #include "utils/RegionT.cpp"
 #include "ReferenceSet.hpp"
@@ -22,7 +21,7 @@ using namespace srsli;
 
 
 // Based on the supplied chain and buffer size, decide the regions of the sequences to align
-region_t ChoseAlignmentRegion(const String<TSeed>& chain,
+region_t ChoseAlignmentRegion(const TSeedChain& chain,
                               const int queryLength,
                               const int refLength,
                               const int maxChainBuffer,

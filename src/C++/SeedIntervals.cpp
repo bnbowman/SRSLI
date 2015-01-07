@@ -155,8 +155,8 @@ int SeedIntervalsToSeedChains(std::vector<ReferencedSeedChain>& chains,
             continue;
 
         // If we pass that first filter, we calculate Start and End positions
-        startPos = GetSeedChainStartPos(refChain.chain);
-        endPos = GetSeedChainEndPos(refChain.chain);
+        startPos = beginPositionV(refChain.chain);
+        endPos = endPositionV(refChain.chain);
 
         // If this is the first chain
         if (chains.size() == 0)

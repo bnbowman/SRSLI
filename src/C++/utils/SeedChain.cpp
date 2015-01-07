@@ -8,6 +8,30 @@
 
 // Utility Functions
 template<typename TSeedChain>
+int beginPositionV(const TSeedChain& chain)
+{
+    return beginPositionV( front(chain) );
+}
+
+template<typename TSeedChain>
+int endPositionV(const TSeedChain& chain)
+{
+    return endPositionV( back(chain) );
+}
+
+template<typename TSeedChain>
+int beginPositionH(const TSeedChain& chain)
+{
+    return beginPositionH( front(chain) );
+}
+
+template<typename TSeedChain>
+int endPositionH(const TSeedChain& chain)
+{
+    return endPositionH( back(chain) );
+}
+
+template<typename TSeedChain>
 size_t SumSeedChainBases(const TSeedChain& chain)
 {
     size_t sum = 0;
@@ -17,20 +41,7 @@ size_t SumSeedChainBases(const TSeedChain& chain)
     }
     return sum;
 }
-
-template<typename TSeedChain>
-int GetSeedChainStartPos(const TSeedChain& chain)
-{
-    return beginPositionV( chain[0] );
-}
-
-template<typename TSeedChain>
-int GetSeedChainEndPos(const TSeedChain& chain)
-{
-    return endPositionV( chain[length(chain)-1] );
-}
 // End Utility Functions
-
 
 // Functors
 struct SeedChainNumBasesFunctor {
