@@ -131,7 +131,7 @@ int SeedIntervalsToSeedChains(std::vector<ReferencedSeedChain>& chains,
     TSeedSet seedSet;
     TSeedChain chain; 
     ReferencedSeedChain refChain;
-    size_t prevIdx;
+    size_t prevIdx = 0;
     int endPos, prevEndPos;
     int startPos, prevStartPos;
     size_t numChainBases;
@@ -139,32 +139,33 @@ int SeedIntervalsToSeedChains(std::vector<ReferencedSeedChain>& chains,
     for (size_t i = 0; i < intervals.size(); ++i)
     {
         // First identify the Reference / Anchor list we will be using
-        size_t refIdx = std::get<0>(intervals[i]);
+        ReferencedSeedChain refChain;
+        refChain.referenceIndex = std::get<0>(intervals[i]);
 
         // Fill the seed set with the appropriate seeds and Chain
         clear(seedSet);
-        SeedSetFromSeedInterval(seedSet, intervals[i], seedVecs[refIdx]);
+        SeedSetFromSeedInterval(seedSet, 
+                                intervals[i], 
+                                seedVecs[refChain.referenceIndex]);
 
         // Chain the seeds together and find the chain's start and end points
-        clear(chain);
-        chainSeedsGlobally(chain, seedSet, SparseChaining());
+        chainSeedsGlobally(refChain.chain, seedSet, SparseChaining());
      
         // Skip seed chains with very little supporting evidence
-        if (minSeedChainBases > SumSeedChainBases(chain))
+        if (minSeedChainBases > SumSeedChainBases(refChain.chain))
             continue;
 
+        // If we pass that first filter, we calculate Start and End positions
         startPos = GetSeedChainStartPos(chain);
         endPos = GetSeedChainEndPos(chain);
-        refChain = ReferencedSeedChain(refIdx, chain);
 
-        // Add the chain to our current vector of possible chains
-        //    which is automatic if there are no previous chains
+        // If this is the first chain
         if (chains.size() == 0)
         {
+            // .. we automatically keep the chain and its Start and End positions
             chains.push_back(refChain);
             prevStartPos = startPos;
             prevEndPos = endPos;
-            prevIdx = 0;
 
         // If we have the same start but a longer end, replace the previous chain
         } else if (startPos == prevStartPos && endPos > prevEndPos ) {
