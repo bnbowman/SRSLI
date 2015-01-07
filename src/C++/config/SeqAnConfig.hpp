@@ -30,8 +30,7 @@ typedef Segment<const TDna> TSegment;
 // Seed-related types
 typedef Seed<Simple> TSeed;
 typedef SeedSet<Simple> TSeedSet;
-typedef String<TSeed> TSeedString;
-typedef std::vector<TSeed> TSeedChain;
+typedef String<TSeed> TSeedChain;
 
 // Alignment-related types
 typedef Align<Dna5String, ArrayGaps> TAlign;

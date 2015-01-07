@@ -48,7 +48,7 @@ region_t ChoseAlignmentRegion(const String<TSeed>& chain,
     return alignmentRegion;
 }
 
-String<TSeed> ShiftSeedString(const String<TSeed>& string,
+String<TSeed> ShiftSeedString(const TSeedChain& string,
                               const region_t alignmentRegion)
 {
     String<TSeed> output;
@@ -89,23 +89,17 @@ int RefChainsToAlignments(std::vector<AlignmentRecord>& results,
         refRec = refSet.Records[refIdx];
         refSeqPtr = refRec.seq;
 
-        String<TSeed> seedString;
-        for (size_t j = 0; j < seedChain->size(); ++j)
-        {
-            appendValue(seedString, seedChain->at(j));
-        }
-
-        region_t alignmentRegion = ChoseAlignmentRegion(seedString, 
+        region_t alignmentRegion = ChoseAlignmentRegion(*seedChain, 
                                                         length(querySeq), 
                                                         length(*refSeqPtr), 
                                                         maxChainBuffer);
-        String<TSeed> shiftedString = ShiftSeedString(seedString, alignmentRegion);
+        TSeedChain shiftedChain = ShiftSeedString(*seedChain, alignmentRegion);
 
         // Create an AlignmentRecord from the sequences and the selected region
         AlignmentRecord alnRec(querySeq, *refSeqPtr, alignmentRegion);
 
         std::cout << "Starting alignment of sequences" << std::endl;
-        alnRec.Score = bandedChainAlignment(alnRec.Alignment, shiftedString, scoring, globalConfig);
+        alnRec.Score = bandedChainAlignment(alnRec.Alignment, shiftedChain, scoring, globalConfig);
         std::cout << "Finishing alignment of sequences" << std::endl;
         std::cout << "Accuracy: " << alnRec.Accuracy() << std::endl;
 

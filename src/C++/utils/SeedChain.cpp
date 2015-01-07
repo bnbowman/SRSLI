@@ -27,7 +27,7 @@ int GetSeedChainStartPos(const TSeedChain& chain)
 template<typename TSeedChain>
 int GetSeedChainEndPos(const TSeedChain& chain)
 {
-    return endPositionV( chain[chain.size()-1] );
+    return endPositionV( chain[length(chain)-1] );
 }
 // End Utility Functions
 

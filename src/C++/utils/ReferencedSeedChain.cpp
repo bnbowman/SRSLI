@@ -13,7 +13,7 @@ size_t SumReferencedSeedChainBases(const ReferencedSeedChain& refChain)
     size_t sum = 0;
     for (size_t i = 0; i < length(*chain); ++i)
     {
-        sum += GetSeedNumBases(chain->at(i));
+        sum += GetSeedNumBases(chain->operator[](i));
     }
     return sum;
 }

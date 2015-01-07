@@ -129,7 +129,7 @@ int SeedIntervalsToSeedChains(std::vector<ReferencedSeedChain>& chains,
 
     // Allocate a seedSet and chain for intermediate use
     TSeedSet seedSet;
-    std::vector<TSeed> chain;
+    TSeedChain chain; 
     ReferencedSeedChain refChain;
     size_t prevIdx;
     int endPos, prevEndPos;
@@ -146,15 +146,16 @@ int SeedIntervalsToSeedChains(std::vector<ReferencedSeedChain>& chains,
         SeedSetFromSeedInterval(seedSet, intervals[i], seedVecs[refIdx]);
 
         // Chain the seeds together and find the chain's start and end points
-        chain.clear();
+        clear(chain);
         chainSeedsGlobally(chain, seedSet, SparseChaining());
-        startPos = GetSeedChainStartPos(chain);
-        endPos = GetSeedChainEndPos(chain);
-        refChain = ReferencedSeedChain(refIdx, chain);
      
         // Skip seed chains with very little supporting evidence
         if (minSeedChainBases > SumSeedChainBases(chain))
             continue;
+
+        startPos = GetSeedChainStartPos(chain);
+        endPos = GetSeedChainEndPos(chain);
+        refChain = ReferencedSeedChain(refIdx, chain);
 
         // Add the chain to our current vector of possible chains
         //    which is automatic if there are no previous chains
